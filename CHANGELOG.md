@@ -6,6 +6,21 @@ All notable changes to `rustweb` are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `rustweb-testing::a11y`: offline static accessibility audit returning
+  severity-ranked, path-located violations with fix hints (rules:
+  `interactive-name`, `form-label`, `image-alt`, `heading-order`,
+  `list-structure`, `landmark-main`). Enforced through `cargo test` on every
+  CI job.
+- `examples/todo-app`: `example_is_a11y_clean` gates the shipped example to
+  zero blocking a11y violations.
+
+### Changed
+- `docs/src/a11y.md` and `docs/src/release-v1.md` updated: fuzz is validated at
+  10M iterations and the a11y static audit is now a code-complete, PR-enforced
+  exit criterion; the only remaining v1.0 gates are real-browser benchmarks and
+  production burn-in.
+
 ## [0.2.0] - 2026-09-11
 
 ### Added

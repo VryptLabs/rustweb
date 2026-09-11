@@ -386,6 +386,7 @@ dependencies = [
  "rustweb-macro",
  "rustweb-router",
  "rustweb-ssr",
+ "rustweb-testing",
 ]
 
 [[package]]

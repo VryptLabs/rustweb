@@ -15,6 +15,11 @@ to v1.0:
 - Crates published to crates.io: `rustweb-{core,macro,dom,router,ssr,testing,cli}`
   v0.2.0; workspace path deps carry explicit `version = "0.2.0"` so future
   `cargo publish` from tags works without local edits.
+- Built-in offline a11y audit (`rustweb_testing::a11y`) with severity-ranked,
+  path-located, fix-hinted violations (rules: interactive-name, form-label,
+  image-alt, heading-order, list-structure, landmark-main). Enforced on every PR
+  via `cargo test`, and `examples/todo-app` gates the shipped example with zero
+  blocking violations.
 - Golden SSR tests freeze the `data-rwh` / `data-rwe-*` / `data-rwh-checksum` /
   `<!---->` / `<!--rwc:-->` contract (`tests/ssr_golden.rs`).
 - Router now recurses into nested index children and lazy children
@@ -27,16 +32,26 @@ to v1.0:
 
 ## Remaining exit criteria for v1.0
 
-1. **Phase 0.3–0.5**: adopt in one internal production app; collect
-   `RenderSample` and hydration mismatch logs; freeze the `data-rwh*` format
-   across releases.
-2. **Phase 0.6–0.8**: ~~raise fuzz budget to 10M iterations~~ (done: 10M
-   validated, see above); add axe-core a11y audit to the browser job; measure
-   real browser benchmarks (Chrome / Firefox / WebKit) against budgets set in
-   `crates/core/src/perf.rs`.
-3. **1.0-rc**: remove all expired `#[deprecated]` items; finalise
-   `MIGRATION.md`; request public API review from users.
-4. **1.0**: tag plus staged release in dependency order
+Code-complete (enforced in this repo / CI):
+
+- [x] Fuzz diff + applier at 10M iterations, apply-success ≥ 99.99%.
+- [x] Static a11y audit (`rustweb_testing::a11y`), PR-gated and applied to the
+      shipped example with zero blocking violations.
+- [x] CI matrix + audit + semver-checks + Pages + release workflows green.
+- [x] Crates published to crates.io with docs.rs building.
+
+Open (cannot be satisfied by code alone; these gate a truthful `1.0.0`):
+
+1. **Production burn-in**: run at least one real application for the agreed soak
+   window, collecting `RenderSample` timing and any hydration mismatch logs, and
+   freeze the `data-rwh*` format as stable.
+2. **Real-browser benchmarks**: measure render/patch on Chrome / Firefox / WebKit
+   against the budgets in `crates/core/src/perf.rs`, and (once a trunk-parity
+   dev server exists) run `axe-core` as the runtime complement to the static
+   linter.
+3. **1.0-rc**: once the two above are met, remove any expired `#[deprecated]`
+   items, finalise `MIGRATION.md`, and cut `v1.0.0-rc.1`.
+4. **1.0**: tag `v1.0.0` plus staged release in dependency order
    (core → macro → dom/router/ssr/testing → cli).
 
 Exit criteria live in `VERSIONING.md`. Every step is measured by the existing

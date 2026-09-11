@@ -150,3 +150,56 @@ fn main() {
     eprintln!("route → {hit:?}");
     let _ = Attr::new("demo", "attr");
 }
+
+#[cfg(test)]
+mod a11y_tests {
+    use super::*;
+    use rustweb_testing::{check_a11y, Severity};
+
+    fn initial_props() -> AppProps {
+        AppProps {
+            initial: vec![
+                Todo {
+                    id: 0,
+                    text: "buy milk".into(),
+                    done: false,
+                },
+                Todo {
+                    id: 1,
+                    text: "write docs".into(),
+                    done: true,
+                },
+            ],
+            children: vec![],
+        }
+    }
+
+    fn app_view() -> VNode {
+        let link = rustweb_core::Link::new(|_: Msg| {});
+        let ctx = Context::new(initial_props(), link, Default::default());
+        let state = App::create(&ctx).expect("create");
+        state.view(&ctx).expect("view")
+    }
+
+    #[test]
+    fn example_is_a11y_clean() {
+        let report = check_a11y(&app_view());
+        assert!(
+            report.is_clean(),
+            "example failed a11y audit:\n{}",
+            report.to_text()
+        );
+    }
+
+    #[test]
+    fn empty_button_would_be_caught() {
+        let broken = html! { <main aria-label="x"><button></button></main> };
+        let report = check_a11y(&broken);
+        assert!(report.has_blocking());
+        assert!(report
+            .violations
+            .iter()
+            .any(|v| v.rule == "interactive-name"));
+        assert_eq!(report.of_severity(Severity::Serious).len(), 1);
+    }
+}

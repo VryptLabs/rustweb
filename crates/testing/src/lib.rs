@@ -1,6 +1,10 @@
 use rustweb_core::{Component, ComponentError, Context, ContextMap, Link, VNode};
 use std::fmt::Debug;
 
+pub mod a11y;
+
+pub use a11y::{check as check_a11y, A11yReport, A11yViolation, Severity};
+
 pub fn render_to_sexpr(node: &VNode) -> String {
     node.to_sexpr()
 }
