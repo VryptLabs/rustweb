@@ -23,9 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v2
-        with:
-          mdbook-version: latest
+        uses: taiki-e/install-action@mdbook
       - run: mdbook build docs
       - uses: actions/upload-pages-artifact@v5
         with:
