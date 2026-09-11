@@ -20,12 +20,12 @@ repository = "https://github.com/VryptLabs/rustweb"
 rust-version = "1.75"
 
 [workspace.dependencies]
-rustweb-core = { path = "crates/core" }
-rustweb-macro = { path = "crates/macro" }
-rustweb-dom = { path = "crates/dom" }
-rustweb-router = { path = "crates/router" }
-rustweb-ssr = { path = "crates/ssr" }
-rustweb-testing = { path = "crates/testing" }
+rustweb-core = { path = "crates/core", version = "0.2.0" }
+rustweb-macro = { path = "crates/macro", version = "0.2.0" }
+rustweb-dom = { path = "crates/dom", version = "0.2.0" }
+rustweb-router = { path = "crates/router", version = "0.2.0" }
+rustweb-ssr = { path = "crates/ssr", version = "0.2.0" }
+rustweb-testing = { path = "crates/testing", version = "0.2.0" }
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
