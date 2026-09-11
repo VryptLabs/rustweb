@@ -2,14 +2,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum RenderError {
-
     #[error("render panicked at {location}: {payload}")]
-    Panicked {
-
-        location: String,
-
-        payload: String,
-    },
+    Panicked { location: String, payload: String },
 
     #[error("invalid virtual DOM: {0}")]
     InvalidTree(String),
@@ -18,28 +12,16 @@ pub enum RenderError {
     RejectedRawHtml(String),
 
     #[error("render failed in {component}: {message}")]
-    Other {
-
-        component: String,
-
-        message: String,
-    },
+    Other { component: String, message: String },
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum PropsError {
-
     #[error("missing required prop `{prop}` on component `{component}`")]
-    MissingRequired {
-
-        component: String,
-
-        prop: String,
-    },
+    MissingRequired { component: String, prop: String },
 
     #[error("invalid prop `{prop}` on `{component}`: {hint}")]
     Invalid {
-
         component: String,
 
         prop: String,
@@ -50,18 +32,11 @@ pub enum PropsError {
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ComponentError {
-
     #[error("create failed for {component}: {message}")]
-    Create {
-
-        component: String,
-
-        message: String,
-    },
+    Create { component: String, message: String },
 
     #[error("update failed for {component} on msg {msg}: {message}")]
     Update {
-
         component: String,
 
         msg: String,
@@ -71,7 +46,6 @@ pub enum ComponentError {
 
     #[error("lifecycle `{hook}` failed for {component}: {message}")]
     Lifecycle {
-
         component: String,
 
         hook: String,
@@ -81,7 +55,6 @@ pub enum ComponentError {
 
     #[error("component {component} panicked in {stage} at {location}: {payload}")]
     Panicked {
-
         component: String,
 
         stage: String,
@@ -100,10 +73,8 @@ pub enum ComponentError {
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum HydrationError {
-
     #[error("hydration tag mismatch at {hid}: server had <{server}>, client wants <{client}>")]
     TagMismatch {
-
         hid: String,
 
         server: String,
@@ -113,7 +84,6 @@ pub enum HydrationError {
 
     #[error("hydration text mismatch at {hid}: server {server:?} vs client {client:?}")]
     TextMismatch {
-
         hid: String,
 
         server: String,
@@ -122,18 +92,8 @@ pub enum HydrationError {
     },
 
     #[error("hydration structure mismatch at {hid}: {message}")]
-    Structure {
-
-        hid: String,
-
-        message: String,
-    },
+    Structure { hid: String, message: String },
 
     #[error("hydration checksum mismatch: server {server} vs client {client}")]
-    Checksum {
-
-        server: String,
-
-        client: String,
-    },
+    Checksum { server: String, client: String },
 }

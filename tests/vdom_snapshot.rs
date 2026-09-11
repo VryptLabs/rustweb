@@ -4,7 +4,10 @@ use rustweb_testing::{assert_json_snapshot, assert_snapshot};
 fn app_tree() -> VNode {
     VNode::element(
         "main",
-        vec![Attr::new("class", "app"), Attr::new("aria-label", "Todo app")],
+        vec![
+            Attr::new("class", "app"),
+            Attr::new("aria-label", "Todo app"),
+        ],
         vec![
             VNode::element("h1", vec![], vec![VNode::text("Todos")]),
             VNode::element(
@@ -18,7 +21,8 @@ fn app_tree() -> VNode {
                         VNode::Element(e)
                     },
                     {
-                        let mut e = rustweb_core::Element::new("li", vec![VNode::text("write docs")]);
+                        let mut e =
+                            rustweb_core::Element::new("li", vec![VNode::text("write docs")]);
                         e.key = Some("2".into());
                         VNode::Element(e)
                     },
@@ -26,7 +30,10 @@ fn app_tree() -> VNode {
             ),
             VNode::element(
                 "button",
-                vec![Attr::new("type", "button"), Attr::new("aria-pressed", "false")],
+                vec![
+                    Attr::new("type", "button"),
+                    Attr::new("aria-pressed", "false"),
+                ],
                 vec![VNode::text("Add")],
             ),
         ],
@@ -45,12 +52,20 @@ fn app_sexpr_snapshot() {
 #[test]
 fn empty_and_fragment_snapshots() {
     assert_snapshot("empty", &VNode::Empty, "()");
-    assert_snapshot("frag", &VNode::fragment(vec![VNode::text("a"), VNode::text("b")]), r#"(<> "a" "b")"#);
+    assert_snapshot(
+        "frag",
+        &VNode::fragment(vec![VNode::text("a"), VNode::text("b")]),
+        r#"(<> "a" "b")"#,
+    );
 }
 
 #[test]
 fn json_snapshot_shape() {
-    let n = VNode::element("button", vec![Attr::new("disabled", true)], vec![VNode::text("Save")]);
+    let n = VNode::element(
+        "button",
+        vec![Attr::new("disabled", true)],
+        vec![VNode::text("Save")],
+    );
     let json = n.to_snapshot_json();
     assert_json_snapshot(&n, &json);
     assert!(json.contains("\"disabled\""), "{json}");

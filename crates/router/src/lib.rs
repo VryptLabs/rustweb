@@ -6,33 +6,21 @@ use thiserror::Error;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum RouterError {
-
     #[error("no route matched for path `{0}`")]
     NotFound(String),
 
     #[error("navigation to `{path}` denied: {reason}")]
-    Forbidden {
-
-        path: String,
-
-        reason: String,
-    },
+    Forbidden { path: String, reason: String },
 
     #[error("redirect loop resolving `{0}`")]
     RedirectLoop(String),
 
     #[error("failed to load lazy route `{route}`: {message}")]
-    LazyLoad {
-
-        route: String,
-
-        message: String,
-    },
+    LazyLoad { route: String, message: String },
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct RouteContext {
-
     pub path: String,
 
     pub params: HashMap<String, String>,
@@ -44,7 +32,6 @@ pub struct RouteContext {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GuardResult {
-
     Allow,
 
     Redirect(String),
@@ -56,7 +43,6 @@ pub type Guard = Rc<dyn Fn(&RouteContext) -> GuardResult>;
 
 #[derive(Clone)]
 pub struct Route {
-
     pub segment: String,
 
     pub name: String,
@@ -84,12 +70,18 @@ impl Debug for Route {
 }
 
 impl Route {
-
     pub fn new(segment: impl Into<String>, view: impl Into<String>) -> Self {
         let seg = segment.into();
         let v = view.into();
         let name = format!("{seg}->{v}");
-        Self { segment: seg, name, view: v, guards: Vec::new(), children: Vec::new(), lazy: None }
+        Self {
+            segment: seg,
+            name,
+            view: v,
+            guards: Vec::new(),
+            children: Vec::new(),
+            lazy: None,
+        }
     }
 
     pub fn guard(mut self, g: impl Fn(&RouteContext) -> GuardResult + 'static) -> Self {
@@ -108,40 +100,58 @@ impl Route {
     }
 }
 
+type LazyFactory = Box<dyn FnOnce() -> Result<Vec<Route>, String>>;
+
 pub struct LazyRoute {
     cell: OnceCell<Vec<Route>>,
-    factory: RefCell<Option<Box<dyn FnOnce() -> Result<Vec<Route>, String>>>>,
+    factory: RefCell<Option<LazyFactory>>,
 }
 
 impl Clone for LazyRoute {
     fn clone(&self) -> Self {
-        Self { cell: OnceCell::new(), factory: RefCell::new(None) }
+        Self {
+            cell: OnceCell::new(),
+            factory: RefCell::new(None),
+        }
     }
 }
 
 impl Debug for LazyRoute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LazyRoute").field("loaded", &self.cell.get().is_some()).finish()
+        f.debug_struct("LazyRoute")
+            .field("loaded", &self.cell.get().is_some())
+            .finish()
     }
 }
 
 impl LazyRoute {
-
     pub fn new(factory: impl FnOnce() -> Result<Vec<Route>, String> + 'static) -> Self {
-        Self { cell: OnceCell::new(), factory: RefCell::new(Some(Box::new(factory))) }
+        Self {
+            cell: OnceCell::new(),
+            factory: RefCell::new(Some(Box::new(factory))),
+        }
     }
 
     pub fn load(&self) -> Result<&Vec<Route>, RouterError> {
         if self.cell.get().is_none() {
-            let f = self.factory.borrow_mut().take().ok_or_else(|| RouterError::LazyLoad {
-                route: "<lazy>".into(),
-                message: "factory already consumed (route cloned after load?)".into(),
-            })?;
+            let f = self
+                .factory
+                .borrow_mut()
+                .take()
+                .ok_or_else(|| RouterError::LazyLoad {
+                    route: "<lazy>".into(),
+                    message: "factory already consumed (route cloned after load?)".into(),
+                })?;
             match f() {
                 Ok(routes) => {
                     let _ = self.cell.set(routes);
                 }
-                Err(message) => return Err(RouterError::LazyLoad { route: "<lazy>".into(), message }),
+                Err(message) => {
+                    return Err(RouterError::LazyLoad {
+                        route: "<lazy>".into(),
+                        message,
+                    })
+                }
             }
         }
         Ok(self.cell.get().expect("just set"))
@@ -154,7 +164,6 @@ impl LazyRoute {
 
 #[derive(Debug, Clone)]
 pub struct Resolved {
-
     pub view: String,
 
     pub chain: Vec<String>,
@@ -170,7 +179,6 @@ pub struct Router {
 }
 
 impl Router {
-
     pub fn new() -> Self {
         Self::default()
     }
@@ -194,7 +202,12 @@ impl Router {
     fn resolve_once(&self, path: &str) -> Result<ResolveStep, RouterError> {
         let (path_part, query) = split_query(path);
         let segs: Vec<&str> = path_part.split('/').filter(|s| !s.is_empty()).collect();
-        let mut ctx = RouteContext { path: path.to_string(), params: HashMap::new(), query, principal: None };
+        let mut ctx = RouteContext {
+            path: path.to_string(),
+            params: HashMap::new(),
+            query,
+            principal: None,
+        };
         let mut chain: Vec<(Guard, String)> = Vec::new();
         let view = self.match_tree(&self.routes, &segs, 0, &mut ctx, &mut chain)?;
         for (guard, _name) in &chain {
@@ -202,12 +215,20 @@ impl Router {
                 GuardResult::Allow => {}
                 GuardResult::Redirect(to) => return Ok(ResolveStep::Redirect(to)),
                 GuardResult::Deny(reason) => {
-                    return Err(RouterError::Forbidden { path: path.to_string(), reason });
+                    return Err(RouterError::Forbidden {
+                        path: path.to_string(),
+                        reason,
+                    });
                 }
             }
         }
         let names = chain.iter().map(|(_, n)| n.clone()).collect();
-        Ok(ResolveStep::Hit(Resolved { view, chain: names, params: ctx.params, query: ctx.query }))
+        Ok(ResolveStep::Hit(Resolved {
+            view,
+            chain: names,
+            params: ctx.params,
+            query: ctx.query,
+        }))
     }
 
     fn match_tree(
@@ -236,13 +257,9 @@ impl Router {
             let next = pos + adv;
             let mut kids = r.children.clone();
             if let Some(lazy) = &r.lazy {
-                match lazy.load() {
-                    Ok(loaded) => kids.extend(loaded.clone()),
-                    Err(e) => return Err(e),
-                }
+                kids.extend(lazy.load()?.clone());
             }
             if next == segs.len() {
-
                 let index_hit = kids
                     .iter()
                     .find(|k| k.segment.is_empty() || k.segment == "/")
@@ -254,10 +271,7 @@ impl Router {
 
                     let mut sub_kids = idx.children.clone();
                     if let Some(lazy) = &idx.lazy {
-                        match lazy.load() {
-                            Ok(loaded) => sub_kids.extend(loaded.clone()),
-                            Err(e) => return Err(e),
-                        }
+                        sub_kids.extend(lazy.load()?.clone());
                     }
                     let _ = sub_kids;
                     return Ok(idx.view.clone());
@@ -368,7 +382,11 @@ mod tests {
             .route(
                 Route::new("users", "Users")
                     .guard(|ctx| {
-                        if ctx.principal.is_some() { GuardResult::Allow } else { GuardResult::Redirect("/login".into()) }
+                        if ctx.principal.is_some() {
+                            GuardResult::Allow
+                        } else {
+                            GuardResult::Redirect("/login".into())
+                        }
                     })
                     .child(Route::new(":id", "UserDetail"))
                     .child(Route::new(":id/edit", "UserEdit")),
@@ -378,9 +396,9 @@ mod tests {
 
     #[test]
     fn nested_match_with_params() {
-
         let r = Router::new().route(
-            Route::new("users", "Users").child(Route::new(":id", "UserDetail").child(Route::new("edit", "UserEdit"))),
+            Route::new("users", "Users")
+                .child(Route::new(":id", "UserDetail").child(Route::new("edit", "UserEdit"))),
         );
         let hit = r.resolve("/users/42/edit").unwrap();
         assert_eq!(hit.view, "UserEdit");
@@ -389,21 +407,30 @@ mod tests {
 
     #[test]
     fn guard_redirect() {
-        let r = Router::new().route(Route::new("admin", "Admin").guard(|_| GuardResult::Redirect("/login".into()))).route(Route::new("login", "Login"));
+        let r = Router::new()
+            .route(Route::new("admin", "Admin").guard(|_| GuardResult::Redirect("/login".into())))
+            .route(Route::new("login", "Login"));
         let hit = r.resolve("/admin").unwrap();
         assert_eq!(hit.view, "Login");
     }
 
     #[test]
     fn guard_deny_is_forbidden() {
-        let r = Router::new().route(Route::new("secret", "S").guard(|_| GuardResult::Deny("nope".into())));
-        assert!(matches!(r.resolve("/secret"), Err(RouterError::Forbidden { .. })));
+        let r = Router::new()
+            .route(Route::new("secret", "S").guard(|_| GuardResult::Deny("nope".into())));
+        assert!(matches!(
+            r.resolve("/secret"),
+            Err(RouterError::Forbidden { .. })
+        ));
     }
 
     #[test]
     fn not_found() {
         let r = app_router();
-        assert!(matches!(r.resolve("/missing"), Err(RouterError::NotFound(_))));
+        assert!(matches!(
+            r.resolve("/missing"),
+            Err(RouterError::NotFound(_))
+        ));
     }
 
     #[test]
@@ -416,7 +443,11 @@ mod tests {
         let r = Router::new().route(Route::new("settings", "Settings").lazy_children(lazy));
         assert_eq!(r.resolve("/settings/profile").unwrap().view, "Profile");
         assert_eq!(r.resolve("/settings/profile").unwrap().view, "Profile");
-        assert_eq!(CALLS.load(Ordering::SeqCst), 1, "factory must run exactly once");
+        assert_eq!(
+            CALLS.load(Ordering::SeqCst),
+            1,
+            "factory must run exactly once"
+        );
     }
 
     #[test]
@@ -424,6 +455,9 @@ mod tests {
         let r = Router::new().route(Route::new("files", "F").child(Route::new("*", "FileView")));
         let hit = r.resolve("/files/a/b/c").unwrap();
         assert_eq!(hit.view, "FileView");
-        assert_eq!(hit.params.get("wildcard").map(|s| s.as_str()), Some("a/b/c"));
+        assert_eq!(
+            hit.params.get("wildcard").map(|s| s.as_str()),
+            Some("a/b/c")
+        );
     }
 }

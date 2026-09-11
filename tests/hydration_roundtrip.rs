@@ -1,5 +1,5 @@
 use rustweb_core::{Attr, VNode};
-use rustweb_dom::{Renderer, diff};
+use rustweb_dom::{diff, Renderer};
 use rustweb_ssr::{render_to_string, verify_hydration};
 
 fn list(items: &[&str]) -> VNode {

@@ -1,4 +1,4 @@
-use rustweb_core::{Attr, Component, Context, Cmd, Props, RenderError, VNode};
+use rustweb_core::{Cmd, Component, Context, Props, RenderError, VNode};
 use rustweb_macro::html;
 
 #[test]
@@ -22,7 +22,7 @@ fn element_with_aria_and_text() {
 #[test]
 fn conditional_and_list_children() {
     let logged_in = true;
-    let items = vec!["a", "b"];
+    let items = ["a", "b"];
     let node = html! {
         <div>
             { if logged_in { html!{ <span>"hi"</span> } } else { html!{ <a href="/login">"login"</a> } } }
@@ -30,7 +30,6 @@ fn conditional_and_list_children() {
         </div>
     };
     if let VNode::Element(el) = &node {
-
         assert_eq!(el.children.len(), 3, "{}", node.to_sexpr());
     } else {
         panic!("expected div");
@@ -75,7 +74,11 @@ impl Component for Button {
     fn create(_ctx: &Context<Self>) -> Result<Self, rustweb_core::ComponentError> {
         Ok(Button)
     }
-    fn update(&mut self, _ctx: &Context<Self>, _msg: ()) -> Result<Cmd<Self>, rustweb_core::ComponentError> {
+    fn update(
+        &mut self,
+        _ctx: &Context<Self>,
+        _msg: (),
+    ) -> Result<Cmd<Self>, rustweb_core::ComponentError> {
         Ok(Cmd::None)
     }
     fn view(&self, ctx: &Context<Self>) -> Result<VNode, RenderError> {

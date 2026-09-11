@@ -4,16 +4,13 @@ pub type PatchPath = Vec<usize>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Patch {
-
     Replace {
-
         path: PatchPath,
 
         new: VNode,
     },
 
     Create {
-
         path: PatchPath,
 
         index: usize,
@@ -22,19 +19,16 @@ pub enum Patch {
     },
 
     Remove {
-
         path: PatchPath,
     },
 
     SetText {
-
         path: PatchPath,
 
         text: String,
     },
 
     SetAttr {
-
         path: PatchPath,
 
         name: String,
@@ -43,14 +37,12 @@ pub enum Patch {
     },
 
     RemoveAttr {
-
         path: PatchPath,
 
         name: String,
     },
 
     Move {
-
         path: PatchPath,
 
         from: usize,
@@ -61,7 +53,6 @@ pub enum Patch {
     },
 
     SetListener {
-
         path: PatchPath,
 
         event: String,
@@ -70,7 +61,6 @@ pub enum Patch {
     },
 
     RemoveListener {
-
         path: PatchPath,
 
         event: String,
@@ -78,7 +68,6 @@ pub enum Patch {
 }
 
 impl Patch {
-
     pub fn is_move(&self) -> bool {
         matches!(self, Patch::Move { .. })
     }

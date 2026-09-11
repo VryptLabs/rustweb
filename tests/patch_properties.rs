@@ -33,7 +33,11 @@ fn interleave_insert_remove_move() {
         let old = ul(&o);
         let new = ul(&n);
         let p = diff(&old, &new);
-        assert_eq!(apply_patches_to_tree(old, &p).unwrap(), new, "case {o:?} -> {n:?}");
+        assert_eq!(
+            apply_patches_to_tree(old, &p).unwrap(),
+            new,
+            "case {o:?} -> {n:?}"
+        );
     }
 }
 
@@ -41,7 +45,11 @@ fn interleave_insert_remove_move() {
 fn text_and_attr_edits_compose() {
     use rustweb_core::Attr;
     let old = VNode::element("div", vec![Attr::new("class", "a")], vec![VNode::text("x")]);
-    let new = VNode::element("div", vec![Attr::new("class", "b"), Attr::new("id", "r")], vec![VNode::text("y")]);
+    let new = VNode::element(
+        "div",
+        vec![Attr::new("class", "b"), Attr::new("id", "r")],
+        vec![VNode::text("y")],
+    );
     let p = diff(&old, &new);
     assert_eq!(apply_patches_to_tree(old, &p).unwrap(), new);
 }

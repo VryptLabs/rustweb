@@ -1,5 +1,5 @@
 use crate::patch::{Patch, PatchPath};
-use rustweb_core::{VNode};
+use rustweb_core::VNode;
 use std::collections::{HashMap, HashSet};
 
 pub fn diff(old: &VNode, new: &VNode) -> Vec<Patch> {
@@ -18,18 +18,19 @@ fn child_list(n: &VNode) -> Option<&[VNode]> {
 }
 
 fn diff_node(old: &VNode, new: &VNode, path: &mut PatchPath, out: &mut Vec<Patch>) {
-
     match (old, new) {
         (VNode::Component(o), VNode::Component(n)) => {
             if o.name != n.name || o.props_json != n.props_json || o.key != n.key {
-                out.push(Patch::Replace { path: path.clone(), new: new.clone() });
+                out.push(Patch::Replace {
+                    path: path.clone(),
+                    new: new.clone(),
+                });
                 return;
             }
             diff_node(&o.rendered, &n.rendered, path, out);
             return;
         }
         (VNode::Component(o), _) => {
-
             let mut tmp = Vec::new();
             let mut sub_path = path.clone();
             diff_node(&o.rendered, new, &mut sub_path, &mut tmp);
@@ -51,12 +52,18 @@ fn diff_node(old: &VNode, new: &VNode, path: &mut PatchPath, out: &mut Vec<Patch
         (VNode::Empty, VNode::Empty) => {}
         (VNode::Text(a), VNode::Text(b)) => {
             if a != b {
-                out.push(Patch::SetText { path: path.clone(), text: b.clone() });
+                out.push(Patch::SetText {
+                    path: path.clone(),
+                    text: b.clone(),
+                });
             }
         }
         (VNode::Element(a), VNode::Element(b)) => {
             if a.tag != b.tag || a.namespace != b.namespace {
-                out.push(Patch::Replace { path: path.clone(), new: new.clone() });
+                out.push(Patch::Replace {
+                    path: path.clone(),
+                    new: new.clone(),
+                });
                 return;
             }
             diff_attrs(a, b, path, out);
@@ -70,7 +77,10 @@ fn diff_node(old: &VNode, new: &VNode, path: &mut PatchPath, out: &mut Vec<Patch
 
         _ => {
             if old != new {
-                out.push(Patch::Replace { path: path.clone(), new: new.clone() });
+                out.push(Patch::Replace {
+                    path: path.clone(),
+                    new: new.clone(),
+                });
             }
         }
     }
@@ -83,17 +93,32 @@ fn diff_attrs(
     path: &[usize],
     out: &mut Vec<Patch>,
 ) {
-    let old_map: HashMap<&str, _> = old.attrs.iter().map(|a| (a.name.as_str(), &a.value)).collect();
-    let new_map: HashMap<&str, _> = new.attrs.iter().map(|a| (a.name.as_str(), &a.value)).collect();
+    let old_map: HashMap<&str, _> = old
+        .attrs
+        .iter()
+        .map(|a| (a.name.as_str(), &a.value))
+        .collect();
+    let new_map: HashMap<&str, _> = new
+        .attrs
+        .iter()
+        .map(|a| (a.name.as_str(), &a.value))
+        .collect();
     for (name, val) in &new_map {
         match old_map.get(name) {
             Some(old_val) if *old_val == *val => {}
-            _ => out.push(Patch::SetAttr { path: path.to_vec(), name: name.to_string(), value: (*val).clone() }),
+            _ => out.push(Patch::SetAttr {
+                path: path.to_vec(),
+                name: name.to_string(),
+                value: (*val).clone(),
+            }),
         }
     }
     for name in old_map.keys() {
         if !new_map.contains_key(name) {
-            out.push(Patch::RemoveAttr { path: path.to_vec(), name: name.to_string() });
+            out.push(Patch::RemoveAttr {
+                path: path.to_vec(),
+                name: name.to_string(),
+            });
         }
     }
 }
@@ -104,22 +129,36 @@ fn diff_listeners(
     path: &[usize],
     out: &mut Vec<Patch>,
 ) {
-    let old_map: HashMap<&str, _> = old.listeners.iter().map(|(e, id)| (e.as_str(), id.as_str())).collect();
-    let new_map: HashMap<&str, _> = new.listeners.iter().map(|(e, id)| (e.as_str(), id.as_str())).collect();
+    let old_map: HashMap<&str, _> = old
+        .listeners
+        .iter()
+        .map(|(e, id)| (e.as_str(), id.as_str()))
+        .collect();
+    let new_map: HashMap<&str, _> = new
+        .listeners
+        .iter()
+        .map(|(e, id)| (e.as_str(), id.as_str()))
+        .collect();
     for (ev, id) in &new_map {
         if old_map.get(ev) != Some(id) {
-            out.push(Patch::SetListener { path: path.to_vec(), event: ev.to_string(), handler_id: id.to_string() });
+            out.push(Patch::SetListener {
+                path: path.to_vec(),
+                event: ev.to_string(),
+                handler_id: id.to_string(),
+            });
         }
     }
     for ev in old_map.keys() {
         if !new_map.contains_key(ev) {
-            out.push(Patch::RemoveListener { path: path.to_vec(), event: ev.to_string() });
+            out.push(Patch::RemoveListener {
+                path: path.to_vec(),
+                event: ev.to_string(),
+            });
         }
     }
 }
 
 fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out: &mut Vec<Patch>) {
-
     if old.is_empty() && new.is_empty() {
         return;
     }
@@ -140,7 +179,11 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
             out.push(Patch::Remove { path: p });
         }
         for (i, node) in new.iter().enumerate().skip(old.len()) {
-            out.push(Patch::Create { path: parent_path.clone(), index: i, node: node.clone() });
+            out.push(Patch::Create {
+                path: parent_path.clone(),
+                index: i,
+                node: node.clone(),
+            });
         }
         return;
     }
@@ -209,12 +252,15 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
     for (new_i, new_node) in new.iter().enumerate() {
         if let Some(k) = new_node.key() {
             if dup_old_keys.contains(k) {
-
                 parent_path.push(new_i);
                 let old_node = old.get(new_i);
                 match old_node {
                     Some(o) => diff_node(o, new_node, parent_path, out),
-                    None => out.push(Patch::Create { path: parent_path.clone(), index: new_i, node: new_node.clone() }),
+                    None => out.push(Patch::Create {
+                        path: parent_path.clone(),
+                        index: new_i,
+                        node: new_node.clone(),
+                    }),
                 }
                 parent_path.pop();
                 continue;
@@ -229,11 +275,14 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
                     new_idx_for_seq.push(new_i);
                 }
                 None => {
-                    out.push(Patch::Create { path: parent_path.clone(), index: new_i, node: new_node.clone() });
+                    out.push(Patch::Create {
+                        path: parent_path.clone(),
+                        index: new_i,
+                        node: new_node.clone(),
+                    });
                 }
             }
         } else {
-
             let slot = old_unkeyed.iter().find(|&&oi| !used_old[oi]).copied();
             match slot {
                 Some(old_i) => {
@@ -245,7 +294,11 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
                     parent_path.pop();
                 }
                 None => {
-                    out.push(Patch::Create { path: parent_path.clone(), index: new_i, node: new_node.clone() });
+                    out.push(Patch::Create {
+                        path: parent_path.clone(),
+                        index: new_i,
+                        node: new_node.clone(),
+                    });
                 }
             }
         }
@@ -277,7 +330,12 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
             }
             let old_i = old_pos_seq[seq_pos];
             let key = new[new_i].key().unwrap_or_default().to_string();
-            out.push(Patch::Move { path: parent_path.clone(), from: old_i, to: new_i, key });
+            out.push(Patch::Move {
+                path: parent_path.clone(),
+                from: old_i,
+                to: new_i,
+                key,
+            });
         }
     }
 }
@@ -290,7 +348,6 @@ fn lis_indices(seq: &[usize]) -> Vec<usize> {
     let mut tails: Vec<usize> = Vec::new();
     let mut prev: Vec<Option<usize>> = vec![None; n];
     for i in 0..n {
-
         let mut lo = 0usize;
         let mut hi = tails.len();
         while lo < hi {
@@ -335,7 +392,13 @@ mod tests {
     #[test]
     fn text_update() {
         let p = diff(&VNode::text("a"), &VNode::text("b"));
-        assert_eq!(p, vec![Patch::SetText { path: vec![], text: "b".into() }]);
+        assert_eq!(
+            p,
+            vec![Patch::SetText {
+                path: vec![],
+                text: "b".into()
+            }]
+        );
     }
 
     #[test]
@@ -347,10 +410,18 @@ mod tests {
     #[test]
     fn attr_diff() {
         let a = VNode::element("div", vec![Attr::new("class", "a")], vec![]);
-        let b = VNode::element("div", vec![Attr::new("class", "b"), Attr::new("id", "x")], vec![]);
+        let b = VNode::element(
+            "div",
+            vec![Attr::new("class", "b"), Attr::new("id", "x")],
+            vec![],
+        );
         let p = diff(&a, &b);
-        assert!(p.iter().any(|x| matches!(x, Patch::SetAttr { name, .. } if name == "class")));
-        assert!(p.iter().any(|x| matches!(x, Patch::SetAttr { name, .. } if name == "id")));
+        assert!(p
+            .iter()
+            .any(|x| matches!(x, Patch::SetAttr { name, .. } if name == "class")));
+        assert!(p
+            .iter()
+            .any(|x| matches!(x, Patch::SetAttr { name, .. } if name == "id")));
     }
 
     #[test]
@@ -358,16 +429,27 @@ mod tests {
         let old = VNode::element(
             "ul",
             vec![],
-            vec![el("li", Some("a"), vec![VNode::text("a")]), el("li", Some("b"), vec![VNode::text("b")]), el("li", Some("c"), vec![VNode::text("c")])],
+            vec![
+                el("li", Some("a"), vec![VNode::text("a")]),
+                el("li", Some("b"), vec![VNode::text("b")]),
+                el("li", Some("c"), vec![VNode::text("c")]),
+            ],
         );
         let new = VNode::element(
             "ul",
             vec![],
-            vec![el("li", Some("c"), vec![VNode::text("c")]), el("li", Some("a"), vec![VNode::text("a")]), el("li", Some("b"), vec![VNode::text("b")])],
+            vec![
+                el("li", Some("c"), vec![VNode::text("c")]),
+                el("li", Some("a"), vec![VNode::text("a")]),
+                el("li", Some("b"), vec![VNode::text("b")]),
+            ],
         );
         let p = diff(&old, &new);
         assert!(p.iter().any(|x| x.is_move()), "expected a Move, got {p:?}");
-        assert!(!p.iter().any(|x| matches!(x, Patch::Replace { .. })), "reorder must not replace: {p:?}");
+        assert!(
+            !p.iter().any(|x| matches!(x, Patch::Replace { .. })),
+            "reorder must not replace: {p:?}"
+        );
     }
 
     #[test]
@@ -382,7 +464,11 @@ mod tests {
     #[test]
     fn unkeyed_positional() {
         let old = VNode::element("div", vec![], vec![VNode::text("a"), VNode::text("b")]);
-        let new = VNode::element("div", vec![], vec![VNode::text("a"), VNode::text("c"), VNode::text("d")]);
+        let new = VNode::element(
+            "div",
+            vec![],
+            vec![VNode::text("a"), VNode::text("c"), VNode::text("d")],
+        );
         let p = diff(&old, &new);
         assert!(p.iter().any(|x| matches!(x, Patch::SetText { .. })));
         assert!(p.iter().any(|x| matches!(x, Patch::Create { .. })));

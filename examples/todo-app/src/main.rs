@@ -33,13 +33,24 @@ impl Component for App {
 
     fn create(ctx: &Context<Self>) -> Result<Self, rustweb_core::ComponentError> {
         let next_id = ctx.props.initial.len();
-        Ok(Self { todos: ctx.props.initial.clone(), next_id })
+        Ok(Self {
+            todos: ctx.props.initial.clone(),
+            next_id,
+        })
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Msg) -> Result<Cmd<Self>, rustweb_core::ComponentError> {
+    fn update(
+        &mut self,
+        _ctx: &Context<Self>,
+        msg: Msg,
+    ) -> Result<Cmd<Self>, rustweb_core::ComponentError> {
         match msg {
             Msg::Add(text) => {
-                self.todos.push(Todo { id: self.next_id, text, done: false });
+                self.todos.push(Todo {
+                    id: self.next_id,
+                    text,
+                    done: false,
+                });
                 self.next_id += 1;
             }
             Msg::Toggle(id) => {
@@ -79,12 +90,20 @@ fn router() -> Router {
         .route(
             Route::new("todos", "TodoList")
                 .guard(|ctx| {
-                    if ctx.principal.is_some() { GuardResult::Allow } else { GuardResult::Redirect("/login".into()) }
+                    if ctx.principal.is_some() {
+                        GuardResult::Allow
+                    } else {
+                        GuardResult::Redirect("/login".into())
+                    }
                 })
                 .child(Route::new(":id", "TodoDetail")),
         )
         .route(Route::new("login", "Login"))
-        .route(Route::new("settings", "Settings").lazy_children(LazyRoute::new(|| Ok(vec![Route::new("profile", "Profile")]))))
+        .route(
+            Route::new("settings", "Settings").lazy_children(LazyRoute::new(|| {
+                Ok(vec![Route::new("profile", "Profile")])
+            })),
+        )
 }
 
 fn main() {
@@ -92,15 +111,27 @@ fn main() {
     let ctx = Context::new(
         AppProps {
             initial: vec![
-                Todo { id: 0, text: "buy milk".into(), done: false },
-                Todo { id: 1, text: "write docs".into(), done: true },
+                Todo {
+                    id: 0,
+                    text: "buy milk".into(),
+                    done: false,
+                },
+                Todo {
+                    id: 1,
+                    text: "write docs".into(),
+                    done: true,
+                },
             ],
             children: vec![],
         },
         link,
         Default::default(),
     );
-    let state = App::create(&ctx).expect("create");
+    let mut state = App::create(&ctx).expect("create");
+    state
+        .update(&ctx, Msg::Add("learn rustweb".into()))
+        .expect("update");
+    state.update(&ctx, Msg::Toggle(0)).expect("update");
     let tree = state.view(&ctx).expect("view");
 
     let html = rustweb_ssr::render_to_string(&tree);
@@ -108,7 +139,9 @@ fn main() {
 
     rustweb_ssr::verify_hydration(&html, &tree).expect("hydrate");
 
-    let hit = router().resolve("/todos/1").unwrap_or_else(|_| router().resolve("/login").unwrap());
+    let hit = router()
+        .resolve("/todos/1")
+        .unwrap_or_else(|_| router().resolve("/login").unwrap());
     eprintln!("route → {hit:?}");
     let _ = Attr::new("demo", "attr");
 }

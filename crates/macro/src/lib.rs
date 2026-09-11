@@ -1,19 +1,60 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Delimiter, Ident, Literal, Punct, Spacing, Span, TokenStream as TS2, TokenTree as TT2};
-use quote::{ToTokens, quote};
+use proc_macro2::{
+    Delimiter, Ident, Literal, Punct, Spacing, Span, TokenStream as TS2, TokenTree as TT2,
+};
+use quote::{quote, ToTokens};
 use std::collections::HashMap;
 
 const KNOWN_ARIA: &[&str] = &[
-    "aria-activedescendant", "aria-atomic", "aria-autocomplete", "aria-busy", "aria-checked",
-    "aria-colcount", "aria-colindex", "aria-colspan", "aria-controls", "aria-current",
-    "aria-describedby", "aria-details", "aria-disabled", "aria-dropeffect", "aria-errormessage",
-    "aria-expanded", "aria-flowto", "aria-grabbed", "aria-haspopup", "aria-hidden",
-    "aria-invalid", "aria-keyshortcuts", "aria-label", "aria-labelledby", "aria-level",
-    "aria-live", "aria-modal", "aria-multiline", "aria-multiselectable", "aria-orientation",
-    "aria-owns", "aria-placeholder", "aria-posinset", "aria-pressed", "aria-readonly",
-    "aria-relevant", "aria-required", "aria-roledescription", "aria-rowcount", "aria-rowindex",
-    "aria-rowspan", "aria-selected", "aria-setsize", "aria-sort", "aria-valuemax",
-    "aria-valuemin", "aria-valuenow", "aria-valuetext", "role",
+    "aria-activedescendant",
+    "aria-atomic",
+    "aria-autocomplete",
+    "aria-busy",
+    "aria-checked",
+    "aria-colcount",
+    "aria-colindex",
+    "aria-colspan",
+    "aria-controls",
+    "aria-current",
+    "aria-describedby",
+    "aria-details",
+    "aria-disabled",
+    "aria-dropeffect",
+    "aria-errormessage",
+    "aria-expanded",
+    "aria-flowto",
+    "aria-grabbed",
+    "aria-haspopup",
+    "aria-hidden",
+    "aria-invalid",
+    "aria-keyshortcuts",
+    "aria-label",
+    "aria-labelledby",
+    "aria-level",
+    "aria-live",
+    "aria-modal",
+    "aria-multiline",
+    "aria-multiselectable",
+    "aria-orientation",
+    "aria-owns",
+    "aria-placeholder",
+    "aria-posinset",
+    "aria-pressed",
+    "aria-readonly",
+    "aria-relevant",
+    "aria-required",
+    "aria-roledescription",
+    "aria-rowcount",
+    "aria-rowindex",
+    "aria-rowspan",
+    "aria-selected",
+    "aria-setsize",
+    "aria-sort",
+    "aria-valuemax",
+    "aria-valuemin",
+    "aria-valuenow",
+    "aria-valuetext",
+    "role",
 ];
 
 fn levenshtein(a: &str, b: &str) -> usize {
@@ -80,7 +121,10 @@ struct Cursor {
 
 impl Cursor {
     fn new(stream: TS2) -> Self {
-        Self { toks: stream.into_iter().collect(), pos: 0 }
+        Self {
+            toks: stream.into_iter().collect(),
+            pos: 0,
+        }
     }
     fn peek(&self) -> Option<&TT2> {
         self.toks.get(self.pos)
@@ -101,8 +145,14 @@ impl Cursor {
     fn expect_punct(&mut self, ch: char) -> Result<Span, syn::Error> {
         match self.next() {
             Some(TT2::Punct(p)) if p.as_char() == ch => Ok(p.span()),
-            Some(other) => Err(err(other.span(), format!("expected `{ch}`, found `{other}`"))),
-            None => Err(err(Span::call_site(), format!("expected `{ch}`, found end of macro input"))),
+            Some(other) => Err(err(
+                other.span(),
+                format!("expected `{ch}`, found `{other}`"),
+            )),
+            None => Err(err(
+                Span::call_site(),
+                format!("expected `{ch}`, found end of macro input"),
+            )),
         }
     }
     fn peek_punct(&self, ch: char) -> bool {
@@ -114,15 +164,12 @@ enum Node {
     Element(ElNode),
     Component(CompNode),
     Fragment(Vec<Node>),
-
-    Expr(TS2, Span),
-
-    Text(String, Span),
+    Expr(TS2),
+    Text(String),
 }
 
 struct ElNode {
     tag: String,
-    span: Span,
     attrs: Vec<(String, AttrVal, Span)>,
     listeners: Vec<(String, TS2, Span)>,
     key: Option<(TS2, Span)>,
@@ -132,25 +179,24 @@ struct ElNode {
 struct CompNode {
     path: TS2,
     name: String,
-    span: Span,
     props: Vec<(String, TS2, Span)>,
     key: Option<(TS2, Span)>,
     children: Vec<Node>,
 }
 
 enum AttrVal {
-
-    Lit(String),
     Bool(bool),
     Expr(TS2),
 }
 
 fn is_component_tag(tag: &str) -> bool {
-    tag.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
+    tag.chars()
+        .next()
+        .map(|c| c.is_uppercase())
+        .unwrap_or(false)
 }
 
 fn parse_tag_name(c: &mut Cursor) -> Result<(String, Span, TS2), syn::Error> {
-
     let mut name = String::new();
     let mut ts = TS2::new();
     let first_span: Span;
@@ -160,13 +206,21 @@ fn parse_tag_name(c: &mut Cursor) -> Result<(String, Span, TS2), syn::Error> {
             name.push_str(&id.to_string());
             id.to_tokens(&mut ts);
         }
-        Some(other) => return Err(err(other.span(), format!("expected tag name, found `{other}`"))),
-        None => return Err(err(Span::call_site(), "expected tag name, found end of input".to_string())),
+        Some(other) => {
+            return Err(err(
+                other.span(),
+                format!("expected tag name, found `{other}`"),
+            ))
+        }
+        None => {
+            return Err(err(
+                Span::call_site(),
+                "expected tag name, found end of input".to_string(),
+            ))
+        }
     }
 
-    while c.peek_punct(':')
-        && matches!(c.peek2(), Some(TT2::Punct(p)) if p.as_char() == ':')
-    {
+    while c.peek_punct(':') && matches!(c.peek2(), Some(TT2::Punct(p)) if p.as_char() == ':') {
         let c1 = c.next().unwrap();
         let c2 = c.next().unwrap();
         c1.to_tokens(&mut ts);
@@ -177,8 +231,18 @@ fn parse_tag_name(c: &mut Cursor) -> Result<(String, Span, TS2), syn::Error> {
                 name.push_str(&id.to_string());
                 id.to_tokens(&mut ts);
             }
-            Some(other) => return Err(err(other.span(), "expected identifier after `::` in tag path".to_string())),
-            None => return Err(err(Span::call_site(), "expected identifier after `::`".to_string())),
+            Some(other) => {
+                return Err(err(
+                    other.span(),
+                    "expected identifier after `::` in tag path".to_string(),
+                ))
+            }
+            None => {
+                return Err(err(
+                    Span::call_site(),
+                    "expected identifier after `::`".to_string(),
+                ))
+            }
         }
     }
 
@@ -194,8 +258,18 @@ fn parse_attr_name(c: &mut Cursor) -> Result<(String, Span), syn::Error> {
             span = id.span();
             name.push_str(&id.to_string());
         }
-        Some(other) => return Err(err(other.span(), format!("expected attribute name, found `{other}`"))),
-        None => return Err(err(Span::call_site(), "expected attribute name".to_string())),
+        Some(other) => {
+            return Err(err(
+                other.span(),
+                format!("expected attribute name, found `{other}`"),
+            ))
+        }
+        None => {
+            return Err(err(
+                Span::call_site(),
+                "expected attribute name".to_string(),
+            ))
+        }
     }
 
     loop {
@@ -215,10 +289,18 @@ fn parse_attr_name(c: &mut Cursor) -> Result<(String, Span), syn::Error> {
                 Some(other) => {
                     return Err(err(
                         other.span(),
-                        format!("expected identifier after `{}` in attribute `{name}`", p.as_char()),
+                        format!(
+                            "expected identifier after `{}` in attribute `{name}`",
+                            p.as_char()
+                        ),
                     ))
                 }
-                None => return Err(err(Span::call_site(), format!("expected identifier after `{}`", p.as_char()))),
+                None => {
+                    return Err(err(
+                        Span::call_site(),
+                        format!("expected identifier after `{}`", p.as_char()),
+                    ))
+                }
             }
         } else {
             break;
@@ -237,24 +319,12 @@ fn parse_attr_value(c: &mut Cursor) -> Result<AttrVal, syn::Error> {
             Ok(AttrVal::Expr(g.stream()))
         }
         Some(TT2::Literal(lit)) => {
-            let s = lit.to_string();
             c.next();
-
-            if s.starts_with('"') {
-
-                Ok(AttrVal::Expr({
-                    let mut t = TS2::new();
-                    t.extend([TT2::Literal(lit)]);
-                    t
-                }))
-            } else {
-
-                Ok(AttrVal::Expr({
-                    let mut t = TS2::new();
-                    t.extend([TT2::Literal(lit)]);
-                    t
-                }))
-            }
+            Ok(AttrVal::Expr({
+                let mut t = TS2::new();
+                t.extend([TT2::Literal(lit)]);
+                t
+            }))
         }
         Some(TT2::Ident(id)) if id == "true" || id == "false" => {
             c.next();
@@ -276,7 +346,6 @@ fn parse_attr_value(c: &mut Cursor) -> Result<AttrVal, syn::Error> {
 }
 
 fn normalize_event(name: &str) -> Option<String> {
-
     if !name.starts_with("on") || name.len() <= 2 {
         return None;
     }
@@ -292,14 +361,16 @@ fn parse_nodes(c: &mut Cursor, stop_tag: Option<&str>) -> Result<Vec<Node>, syn:
     let mut out = Vec::new();
     loop {
         if c.eos() {
-            if stop_tag.is_some() {
-                return Err(err(Span::call_site(), format!("unclosed tag `<{}>`: missing `</{}>`", stop_tag.unwrap(), stop_tag.unwrap())));
+            if let Some(tag) = stop_tag {
+                return Err(err(
+                    Span::call_site(),
+                    format!("unclosed tag `<{tag}>`: missing `</{tag}>`"),
+                ));
             }
             break;
         }
 
         if c.peek_punct('<') {
-
             let is_close = matches!(c.peek2(), Some(TT2::Punct(p)) if p.as_char() == '/');
             if is_close {
                 break;
@@ -318,7 +389,7 @@ fn parse_nodes(c: &mut Cursor, stop_tag: Option<&str>) -> Result<Vec<Node>, syn:
                 if g.stream().is_empty() {
                     return Err(err(span, "empty `{}` block is not a valid child. Hint: remove it or use `{html!{…}}`".to_string()));
                 }
-                out.push(Node::Expr(g.stream(), span));
+                out.push(Node::Expr(g.stream()));
                 continue;
             }
         }
@@ -328,22 +399,21 @@ fn parse_nodes(c: &mut Cursor, stop_tag: Option<&str>) -> Result<Vec<Node>, syn:
             if s.starts_with('"') {
                 c.next();
 
-                let lit2: syn::LitStr = syn::parse2(quote! { #lit }).map_err(|e| err(lit.span(), format!("invalid string literal child: {e}")))?;
-                out.push(Node::Text(lit2.value(), lit.span()));
+                let lit2: syn::LitStr = syn::parse2(quote! { #lit })
+                    .map_err(|e| err(lit.span(), format!("invalid string literal child: {e}")))?;
+                out.push(Node::Text(lit2.value()));
                 continue;
             }
         }
 
         {
             let mut buf = String::new();
-            let mut span = Span::call_site();
             let mut any = false;
             while let Some(t) = c.peek().cloned() {
                 match &t {
                     TT2::Punct(p) if p.as_char() == '<' => break,
                     TT2::Group(g) if g.delimiter() == Delimiter::Brace => break,
                     _ => {
-                        span = t.span();
                         buf.push_str(&t.to_string());
                         buf.push(' ');
                         c.next();
@@ -354,7 +424,7 @@ fn parse_nodes(c: &mut Cursor, stop_tag: Option<&str>) -> Result<Vec<Node>, syn:
             if any {
                 let trimmed = buf.trim().to_string();
                 if !trimmed.is_empty() {
-                    out.push(Node::Text(trimmed, span));
+                    out.push(Node::Text(trimmed));
                 }
                 continue;
             }
@@ -389,32 +459,47 @@ fn parse_element_or_fragment(c: &mut Cursor) -> Result<Node, syn::Error> {
     let mut seen: HashMap<String, Span> = HashMap::new();
 
     loop {
-
         if c.peek_punct('/') {
             c.next();
             c.expect_punct('>')?;
-            return finish_tag(component, short, tag_path, tag_span, attrs, listeners, key, Vec::new(), true);
+            return finish_tag(TagParts {
+                component,
+                short,
+                tag_path,
+                tag_span,
+                attrs,
+                listeners,
+                key,
+                children: Vec::new(),
+                self_closed: true,
+            });
         }
         if c.peek_punct('>') {
             c.next();
             break;
         }
         if c.eos() {
-            return Err(err(tag_span, format!("unclosed tag `<{short}>`: expected `>` or `/>`")));
+            return Err(err(
+                tag_span,
+                format!("unclosed tag `<{short}>`: expected `>` or `/>`"),
+            ));
         }
         let (aname, aspan) = parse_attr_name(c)?;
         if let Some(prev) = seen.insert(aname.clone(), aspan) {
             let _ = prev;
-            return Err(err(aspan, format!("duplicate attribute `{aname}` on `<{short}>`. Hint: remove one occurrence")));
+            return Err(err(
+                aspan,
+                format!(
+                    "duplicate attribute `{aname}` on `<{short}>`. Hint: remove one occurrence"
+                ),
+            ));
         }
 
-        if aname.starts_with("aria-") || aname.starts_with("aria") && aname.len() > 4 {
-            if !KNOWN_ARIA.contains(&aname.as_str()) {
-                if let Some(sug) = suggest_aria(&aname) {
-                    return Err(err(aspan, format!("unknown ARIA attribute `{aname}` on `<{short}>`. Did you mean `{sug}`? See https://www.w3.org/TR/wai-aria-1.2/")));
-                } else {
-                    return Err(err(aspan, format!("unknown ARIA attribute `{aname}` on `<{short}>`. Expected a valid `aria-*` attribute or `role`; see https://www.w3.org/TR/wai-aria-1.2/")));
-                }
+        if aname.starts_with("aria") && aname.len() > 4 && !KNOWN_ARIA.contains(&aname.as_str()) {
+            if let Some(sug) = suggest_aria(&aname) {
+                return Err(err(aspan, format!("unknown ARIA attribute `{aname}` on `<{short}>`. Did you mean `{sug}`? See https://www.w3.org/TR/wai-aria-1.2/")));
+            } else {
+                return Err(err(aspan, format!("unknown ARIA attribute `{aname}` on `<{short}>`. Expected a valid `aria-*` attribute or `role`; see https://www.w3.org/TR/wai-aria-1.2/")));
             }
         }
 
@@ -426,12 +511,13 @@ fn parse_element_or_fragment(c: &mut Cursor) -> Result<Node, syn::Error> {
             let v = parse_attr_value(c)?;
             match v {
                 AttrVal::Expr(e) => key = Some((e, aspan)),
-                AttrVal::Lit(s) => {
-                    let mut t = TS2::new();
-                    Literal::string(&s).to_tokens(&mut t);
-                    key = Some((t, aspan));
+                AttrVal::Bool(_) => {
+                    return Err(err(
+                        aspan,
+                        "`key` must be a string/number expression, e.g. `key={item.id}`"
+                            .to_string(),
+                    ))
                 }
-                AttrVal::Bool(_) => return Err(err(aspan, "`key` must be a string/number expression, e.g. `key={item.id}`".to_string())),
             }
             continue;
         }
@@ -465,19 +551,44 @@ fn parse_element_or_fragment(c: &mut Cursor) -> Result<Node, syn::Error> {
 
     let children = parse_nodes(c, Some(&short))?;
 
-    c.expect_punct('<').map_err(|_| err(tag_span, format!("unclosed tag `<{short}>`: missing `</{short}>`")))?;
-    c.expect_punct('/').map_err(|_| err(tag_span, format!("unclosed tag `<{short}>`: missing `</{short}>`")))?;
+    c.expect_punct('<').map_err(|_| {
+        err(
+            tag_span,
+            format!("unclosed tag `<{short}>`: missing `</{short}>`"),
+        )
+    })?;
+    c.expect_punct('/').map_err(|_| {
+        err(
+            tag_span,
+            format!("unclosed tag `<{short}>`: missing `</{short}>`"),
+        )
+    })?;
 
     let (close_short, _, _) = parse_tag_name(c)?;
 
-    c.expect_punct('>').map_err(|e| err(e.span(), format!("expected `>` to close `</{close_short}>`")))?;
+    c.expect_punct('>').map_err(|e| {
+        err(
+            e.span(),
+            format!("expected `>` to close `</{close_short}>`"),
+        )
+    })?;
     if close_short != short {
         return Err(err(tag_span, format!("mismatched tags: opened `<{short}>` but closed `</{close_short}>`. Hint: tags are case-sensitive")));
     }
-    finish_tag(component, short, tag_path, tag_span, attrs, listeners, key, children, false)
+    finish_tag(TagParts {
+        component,
+        short,
+        tag_path,
+        tag_span,
+        attrs,
+        listeners,
+        key,
+        children,
+        self_closed: false,
+    })
 }
 
-fn finish_tag(
+struct TagParts {
     component: bool,
     short: String,
     tag_path: TS2,
@@ -487,25 +598,34 @@ fn finish_tag(
     key: Option<(TS2, Span)>,
     children: Vec<Node>,
     self_closed: bool,
-) -> Result<Node, syn::Error> {
-    if !component && !self_closed {
+}
 
-        const VOID: &[&str] = &["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"];
+fn finish_tag(parts: TagParts) -> Result<Node, syn::Error> {
+    let TagParts {
+        component,
+        short,
+        tag_path,
+        tag_span,
+        attrs,
+        listeners,
+        key,
+        children,
+        self_closed,
+    } = parts;
+    if !component && !self_closed {
+        const VOID: &[&str] = &[
+            "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
+            "track", "wbr",
+        ];
         if VOID.contains(&short.as_str()) && !children.is_empty() {
             return Err(err(tag_span, format!("<{short}> is a void element and cannot have children. Hint: use `<{short} … />`")));
         }
     }
     if component {
-
         let mut props = Vec::new();
         for (n, v, s) in attrs {
             let expr = match v {
                 AttrVal::Expr(e) => e,
-                AttrVal::Lit(l) => {
-                    let mut t = TS2::new();
-                    Literal::string(&l).to_tokens(&mut t);
-                    t
-                }
                 AttrVal::Bool(b) => {
                     let mut t = TS2::new();
                     Ident::new(if b { "true" } else { "false" }, s).to_tokens(&mut t);
@@ -514,7 +634,11 @@ fn finish_tag(
             };
 
             let field = if n.contains('-') || n.contains(':') {
-                return Err(err(s, format!("prop `{n}` on `<{short}>` is not a valid Rust field name. Hint: rename the prop to `{}` (dashes become underscores)", n.replace('-', "_").replace(':', "_"))));
+                let renamed: String = n
+                    .chars()
+                    .map(|ch| if ch == '-' || ch == ':' { '_' } else { ch })
+                    .collect();
+                return Err(err(s, format!("prop `{n}` on `<{short}>` is not a valid Rust field name. Hint: rename the prop to `{renamed}` (dashes become underscores)")));
             } else {
                 n
             };
@@ -524,9 +648,21 @@ fn finish_tag(
         for (ev, handler, s) in listeners {
             props.push((format!("on_{ev}"), handler, s));
         }
-        return Ok(Node::Component(CompNode { path: tag_path, name: short, span: tag_span, props, key, children }));
+        return Ok(Node::Component(CompNode {
+            path: tag_path,
+            name: short,
+            props,
+            key,
+            children,
+        }));
     }
-    Ok(Node::Element(ElNode { tag: short, span: tag_span, attrs, listeners, key, children }))
+    Ok(Node::Element(ElNode {
+        tag: short,
+        attrs,
+        listeners,
+        key,
+        children,
+    }))
 }
 
 fn codegen_nodes(nodes: &[Node]) -> TS2 {
@@ -551,11 +687,11 @@ fn codegen_nodes(nodes: &[Node]) -> TS2 {
 
 fn codegen_node_as_vnodes(n: &Node) -> TS2 {
     match n {
-        Node::Text(s, _) => {
+        Node::Text(s) => {
             let lit = Literal::string(s);
             quote! { ::rustweb_core::HtmlChild::into_vnodes(#lit) }
         }
-        Node::Expr(e, _) => {
+        Node::Expr(e) => {
             quote! { ::rustweb_core::HtmlChild::into_vnodes(#e) }
         }
         Node::Fragment(children) => {
@@ -593,10 +729,6 @@ fn codegen_element(el: &ElNode) -> TS2 {
         match val {
             AttrVal::Bool(true) => attr_builders.push(quote! { ::rustweb_core::Attr::new(#name_lit, true) }),
             AttrVal::Bool(false) => attr_builders.push(quote! { ::rustweb_core::Attr::new(#name_lit, false) }),
-            AttrVal::Lit(s) => {
-                let l = Literal::string(s);
-                attr_builders.push(quote! { ::rustweb_core::Attr::new(#name_lit, #l) });
-            }
             AttrVal::Expr(e) => attr_builders.push(quote! { ::rustweb_core::Attr::new(#name_lit, ::rustweb_core::IntoAttrValue::into_attr_value(#e)) }),
         }
     }
@@ -706,7 +838,6 @@ pub fn html(input: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error().into(),
     };
     if !cursor.eos() {
-
         let rest: Vec<String> = {
             let mut v = Vec::new();
             while let Some(t) = cursor.next() {
@@ -715,7 +846,9 @@ pub fn html(input: TokenStream) -> TokenStream {
             v
         };
         let msg = format!("unexpected trailing tokens `{}`. Hint: close all tags and wrap siblings in `<>…</>` if needed", rest.join(" "));
-        return syn::Error::new(Span::call_site(), msg).to_compile_error().into();
+        return syn::Error::new(Span::call_site(), msg)
+            .to_compile_error()
+            .into();
     }
     codegen_nodes(&nodes).into()
 }

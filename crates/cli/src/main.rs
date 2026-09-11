@@ -2,18 +2,19 @@ use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Parser)]
-#[command(name = "rustweb", version, about = "Production tooling for Rust Web frontend apps")]
+#[command(
+    name = "rustweb",
+    version,
+    about = "Production tooling for Rust Web frontend apps"
+)]
 pub struct Cli {
-
     #[command(subcommand)]
     pub cmd: Cmd,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Cmd {
-
     New {
-
         name: String,
 
         #[arg(long)]
@@ -21,7 +22,6 @@ pub enum Cmd {
     },
 
     Build {
-
         #[arg(long)]
         package: Option<String>,
 
@@ -39,7 +39,6 @@ pub enum Cmd {
     },
 
     Serve {
-
         #[arg(long, default_value_t = 8080)]
         port: u16,
 
@@ -70,7 +69,10 @@ pub fn dist_size(dir: &Path) -> u64 {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for e in entries.flatten() {
             let p = e.path();
-            if p.extension().map(|x| x == "wasm" || x == "js").unwrap_or(false) {
+            if p.extension()
+                .map(|x| x == "wasm" || x == "js")
+                .unwrap_or(false)
+            {
                 total += e.metadata().map(|m| m.len()).unwrap_or(0);
             }
         }
@@ -82,9 +84,19 @@ fn main() -> AnyhowExit {
     let cli = Cli::parse();
     match cli.cmd {
         Cmd::New { name, dir } => cmd_new(&name, dir.as_deref()),
-        Cmd::Build { package, optimize, budget, features, no_opt } => {
-            cmd_build(package.as_deref(), &optimize, budget.as_deref(), features.as_deref(), no_opt)
-        }
+        Cmd::Build {
+            package,
+            optimize,
+            budget,
+            features,
+            no_opt,
+        } => cmd_build(
+            package.as_deref(),
+            &optimize,
+            budget.as_deref(),
+            features.as_deref(),
+            no_opt,
+        ),
         Cmd::Serve { port, dir } => cmd_serve(port, &dir),
     }
 }
@@ -92,7 +104,9 @@ fn main() -> AnyhowExit {
 type AnyhowExit = Result<(), Box<dyn std::error::Error>>;
 
 fn cmd_new(name: &str, dir: Option<&Path>) -> AnyhowExit {
-    let out = dir.map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from(name));
+    let out = dir
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| PathBuf::from(name));
     std::fs::create_dir_all(out.join("src"))?;
     std::fs::write(
         out.join("Cargo.toml"),
@@ -145,7 +159,6 @@ fn cmd_build(
     features: Option<&str>,
     no_opt: bool,
 ) -> AnyhowExit {
-
     let mut args = vec!["build", "--release", "--target", "wasm32-unknown-unknown"];
     let pkg;
     if let Some(p) = package {
@@ -172,8 +185,12 @@ fn cmd_build(
 
     if !no_opt {
         match run("wasm-opt", &["--version"]) {
-            Ok(()) => println!("$ wasm-opt {optimize} dist/*.wasm (configure per chunk for code-split builds)"),
-            Err(_) => println!("warning: `wasm-opt` not found; install binaryen for bundle-size wins"),
+            Ok(()) => println!(
+                "$ wasm-opt {optimize} dist/*.wasm (configure per chunk for code-split builds)"
+            ),
+            Err(_) => {
+                println!("warning: `wasm-opt` not found; install binaryen for bundle-size wins")
+            }
         }
     }
 
@@ -190,9 +207,16 @@ fn cmd_build(
 }
 
 fn cmd_serve(port: u16, dir: &Path) -> AnyhowExit {
-    println!("serving {} at http://127.0.0.1:{port}/ (Ctrl-C to stop)", dir.display());
+    println!(
+        "serving {} at http://127.0.0.1:{port}/ (Ctrl-C to stop)",
+        dir.display()
+    );
     println!("note: production dev-server with HMR headers is trunk-parity roadmap; this MVP serves via `python3 -m http.server` semantics.");
     let dir = dir.to_string_lossy().to_string();
     let port = port.to_string();
-    run("python3", &["-m", "http.server", &port, "--directory", &dir]).map_err(|e| e.into())
+    run(
+        "python3",
+        &["-m", "http.server", &port, "--directory", &dir],
+    )
+    .map_err(|e| e.into())
 }

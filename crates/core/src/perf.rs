@@ -3,7 +3,6 @@ use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
 pub struct RenderSample {
-
     pub component: &'static str,
 
     pub view_time: Duration,
@@ -14,7 +13,6 @@ pub struct RenderSample {
 }
 
 pub trait RenderProfiler: Send + Sync {
-
     fn on_sample(&self, sample: &RenderSample);
 
     fn on_error(&self, component: &'static str, message: &str) {
@@ -41,7 +39,6 @@ struct DetectorState {
 }
 
 impl UnnecessaryRenderDetector {
-
     pub fn record(
         &self,
         _component: &'static str,
@@ -77,7 +74,12 @@ impl UnnecessaryRenderDetector {
 
 impl RenderProfiler for UnnecessaryRenderDetector {
     fn on_sample(&self, sample: &RenderSample) {
-        self.record(sample.component, sample.view_time, sample.patch_time, sample.unnecessary);
+        self.record(
+            sample.component,
+            sample.view_time,
+            sample.patch_time,
+            sample.unnecessary,
+        );
     }
 }
 

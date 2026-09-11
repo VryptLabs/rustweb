@@ -2,7 +2,6 @@ use crate::error::PropsError;
 use std::fmt::Debug;
 
 pub trait Props: Clone + PartialEq + Debug {
-
     fn validate(&self) -> Result<(), PropsError> {
         Ok(())
     }

@@ -1,5 +1,5 @@
 use crate::error::{ComponentError, RenderError};
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 fn payload_to_string(payload: &Box<dyn std::any::Any + Send + 'static>) -> String {
     if let Some(s) = payload.downcast_ref::<&str>() {
@@ -56,7 +56,11 @@ mod tests {
         fn create(_ctx: &Context<Self>) -> Result<Self, ComponentError> {
             Ok(Dummy)
         }
-        fn update(&mut self, _ctx: &Context<Self>, _msg: ()) -> Result<crate::Cmd<Self>, ComponentError> {
+        fn update(
+            &mut self,
+            _ctx: &Context<Self>,
+            _msg: (),
+        ) -> Result<crate::Cmd<Self>, ComponentError> {
             Ok(crate::Cmd::None)
         }
         fn view(&self, _ctx: &Context<Self>) -> Result<VNode, crate::RenderError> {
@@ -67,12 +71,8 @@ mod tests {
     #[test]
     fn panic_becomes_error_not_unwind() {
         let loc = std::panic::Location::caller();
-        let r: Result<(), ComponentError> = run_guarded::<Dummy, ()>(
-            "Test",
-            "view",
-            loc,
-            || panic!("boom"),
-        );
+        let r: Result<(), ComponentError> =
+            run_guarded::<Dummy, ()>("Test", "view", loc, || panic!("boom"));
         assert!(matches!(r, Err(ComponentError::Panicked { .. })));
     }
 }

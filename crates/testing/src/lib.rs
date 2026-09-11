@@ -19,7 +19,12 @@ pub fn assert_snapshot(name: &str, node: &VNode, expected_sexpr: &str) {
 pub fn assert_json_snapshot(node: &VNode, expected_json: &str) {
     let actual: serde_json::Value = serde_json::from_str(&node.to_snapshot_json()).unwrap();
     let expected: serde_json::Value = serde_json::from_str(expected_json).unwrap();
-    assert_eq!(actual, expected, "JSON snapshot mismatch:\nactual:\n{}\n", node.to_snapshot_json());
+    assert_eq!(
+        actual,
+        expected,
+        "JSON snapshot mismatch:\nactual:\n{}\n",
+        node.to_snapshot_json()
+    );
 }
 
 pub struct TestHarness<C: Component> {
@@ -28,7 +33,6 @@ pub struct TestHarness<C: Component> {
 }
 
 impl<C: Component> TestHarness<C> {
-
     pub fn new(props: C::Props) -> Self {
         Self::with_contexts(props, ContextMap::new())
     }
@@ -49,12 +53,18 @@ impl<C: Component> TestHarness<C> {
     where
         C::Msg: Debug,
     {
-        self.inbox.borrow().iter().map(|m| format!("{m:?}")).collect()
+        self.inbox
+            .borrow()
+            .iter()
+            .map(|m| format!("{m:?}"))
+            .collect()
     }
 
     pub fn create(&self) -> Result<C, ComponentError> {
         let loc = std::panic::Location::caller();
-        rustweb_core::runtime::run_guarded::<C, C>(C::name(), "create", loc, || C::create(&self.ctx))
+        rustweb_core::runtime::run_guarded::<C, C>(C::name(), "create", loc, || {
+            C::create(&self.ctx)
+        })
     }
 
     pub fn view(&self, state: &C) -> Result<VNode, ComponentError> {
@@ -65,13 +75,21 @@ impl<C: Component> TestHarness<C> {
         }
     }
 
-    pub fn update(&self, state: &mut C, msg: C::Msg) -> Result<rustweb_core::Cmd<C>, ComponentError> {
+    pub fn update(
+        &self,
+        state: &mut C,
+        msg: C::Msg,
+    ) -> Result<rustweb_core::Cmd<C>, ComponentError> {
         let loc = std::panic::Location::caller();
         let msg_dbg = format!("{:?}", &msg as &dyn Debug);
         rustweb_core::runtime::run_guarded::<C, _>(C::name(), "update", loc, || {
             state.update(&self.ctx, msg).map_err(|e| match e {
                 ComponentError::Update { .. } => e,
-                other => ComponentError::Update { component: C::name().into(), msg: msg_dbg.clone(), message: other.to_string() },
+                other => ComponentError::Update {
+                    component: C::name().into(),
+                    msg: msg_dbg.clone(),
+                    message: other.to_string(),
+                },
             })
         })
     }
@@ -85,7 +103,6 @@ pub mod headless {
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Browser {
-
         Chrome,
 
         Firefox,
@@ -95,7 +112,6 @@ pub mod headless {
 
     #[derive(Debug, Clone)]
     pub struct HeadlessConfig {
-
         pub browser: Browser,
 
         pub webdriver_url: String,
@@ -112,7 +128,8 @@ pub mod headless {
             };
             Self {
                 browser,
-                webdriver_url: std::env::var("WEBDRIVER_URL").unwrap_or_else(|_| "http://localhost:4444".into()),
+                webdriver_url: std::env::var("WEBDRIVER_URL")
+                    .unwrap_or_else(|_| "http://localhost:4444".into()),
                 headless: std::env::var("HEADLESS").as_deref() != Ok("0"),
             }
         }
@@ -121,7 +138,6 @@ pub mod headless {
     pub fn require_headless() -> HeadlessConfig {
         if std::env::var("HEADLESS").as_deref() != Ok("1") {
             eprintln!("skipping browser test (set HEADLESS=1 with a WebDriver at $WEBDRIVER_URL)");
-
         }
         HeadlessConfig::default()
     }

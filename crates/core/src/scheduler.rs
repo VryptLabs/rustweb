@@ -13,9 +13,12 @@ pub struct Scheduler<M: Debug> {
 }
 
 impl<M: Debug> Scheduler<M> {
-
     pub fn new() -> Self {
-        Self { queue: VecDeque::new(), enqueued: 0, dropped: 0 }
+        Self {
+            queue: VecDeque::new(),
+            enqueued: 0,
+            dropped: 0,
+        }
     }
 
     pub fn push(&mut self, msg: M) {
@@ -50,13 +53,16 @@ impl<M: Debug> Scheduler<M> {
     }
 
     pub fn stats(&self) -> SchedulerStats {
-        SchedulerStats { pending: self.pending(), enqueued: self.enqueued, dropped: self.dropped }
+        SchedulerStats {
+            pending: self.pending(),
+            enqueued: self.enqueued,
+            dropped: self.dropped,
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SchedulerStats {
-
     pub pending: usize,
 
     pub enqueued: u64,

@@ -5,7 +5,6 @@ pub type Key = String;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AttrValue {
-
     String(String),
 
     Bool(bool),
@@ -41,16 +40,17 @@ impl From<i64> for AttrValue {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Attr {
-
     pub name: String,
 
     pub value: AttrValue,
 }
 
 impl Attr {
-
     pub fn new(name: impl Into<String>, value: impl Into<AttrValue>) -> Self {
-        Self { name: name.into(), value: value.into() }
+        Self {
+            name: name.into(),
+            value: value.into(),
+        }
     }
 
     pub fn is_internal(name: &str) -> bool {
@@ -64,7 +64,6 @@ impl Attr {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Element {
-
     pub tag: String,
 
     pub key: Option<Key>,
@@ -81,7 +80,6 @@ pub struct Element {
 }
 
 impl Element {
-
     pub fn new(tag: impl Into<String>, children: Vec<VNode>) -> Self {
         Self {
             tag: tag.into(),
@@ -97,7 +95,6 @@ impl Element {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VComp {
-
     pub name: String,
 
     pub key: Option<Key>,
@@ -108,15 +105,18 @@ pub struct VComp {
 }
 
 impl VComp {
-
     pub fn new(name: impl Into<String>, props_json: String, rendered: VNode) -> Self {
-        Self { name: name.into(), key: None, props_json, rendered: Box::new(rendered) }
+        Self {
+            name: name.into(),
+            key: None,
+            props_json,
+            rendered: Box::new(rendered),
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VNode {
-
     Element(Element),
 
     Text(String),
@@ -129,7 +129,6 @@ pub enum VNode {
 }
 
 impl VNode {
-
     pub fn element(tag: impl Into<String>, attrs: Vec<Attr>, children: Vec<VNode>) -> Self {
         VNode::Element(Element {
             tag: tag.into(),
@@ -212,7 +211,12 @@ impl VNode {
                 format!("(<> {})", inner.join(" "))
             }
             VNode::Component(c) => {
-                format!("({} props={} {})", c.name, c.props_json, c.rendered.to_sexpr())
+                format!(
+                    "({} props={} {})",
+                    c.name,
+                    c.props_json,
+                    c.rendered.to_sexpr()
+                )
             }
             VNode::Element(el) => {
                 let mut s = format!("({}", el.tag);
@@ -278,7 +282,6 @@ impl From<bool> for VNode {
 }
 
 pub trait HtmlChild {
-
     fn into_vnodes(self) -> Vec<VNode>;
 }
 
@@ -327,8 +330,11 @@ impl HtmlChild for usize {
 }
 impl HtmlChild for bool {
     fn into_vnodes(self) -> Vec<VNode> {
-
-        if self { vec![VNode::Text("true".to_owned())] } else { vec![] }
+        if self {
+            vec![VNode::Text("true".to_owned())]
+        } else {
+            vec![]
+        }
     }
 }
 impl<T: HtmlChild> HtmlChild for Option<T> {
@@ -354,7 +360,6 @@ impl<T: HtmlChild + Clone> HtmlChild for &T {
 }
 
 pub trait IntoAttrValue {
-
     fn into_attr_value(self) -> AttrValue;
 }
 
@@ -430,7 +435,10 @@ mod tests {
             vec![Attr::new("class", "main"), Attr::new("aria-label", "Close")],
             vec![VNode::text("hi")],
         );
-        assert_eq!(n.to_sexpr(), r#"(div class="main" aria-label="Close" "hi")"#);
+        assert_eq!(
+            n.to_sexpr(),
+            r#"(div class="main" aria-label="Close" "hi")"#
+        );
     }
 
     #[test]

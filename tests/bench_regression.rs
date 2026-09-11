@@ -7,7 +7,7 @@ fn big_list(n: usize) -> VNode {
         vec![],
         (0..n)
             .map(|i| {
-                let mut e = rustweb_core::Element::new("li", vec![VNode::text(format!("row {i}") )]);
+                let mut e = rustweb_core::Element::new("li", vec![VNode::text(format!("row {i}"))]);
                 e.key = Some(i.to_string());
                 VNode::Element(e)
             })
@@ -16,7 +16,10 @@ fn big_list(n: usize) -> VNode {
 }
 
 fn mult() -> f64 {
-    std::env::var("BENCH_MULT").ok().and_then(|s| s.parse().ok()).unwrap_or(1.0)
+    std::env::var("BENCH_MULT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1.0)
 }
 
 #[test]
@@ -33,7 +36,11 @@ fn bench_diff_1000() {
     let dt = t0.elapsed();
     assert!(!patches.is_empty());
     let budget = (50.0 * mult()) as u128;
-    assert!(dt.as_millis() <= budget, "diff regression: {:?} > {budget}ms", dt);
+    assert!(
+        dt.as_millis() <= budget,
+        "diff regression: {:?} > {budget}ms",
+        dt
+    );
     eprintln!("diff 1000 rows: {dt:?} ({} patches)", patches.len());
 }
 
@@ -52,7 +59,11 @@ fn bench_patch_apply_1000() {
     let dt = t0.elapsed();
     assert_eq!(out, new);
     let budget = (25.0 * mult()) as u128;
-    assert!(dt.as_millis() <= budget, "patch regression: {:?} > {budget}ms", dt);
+    assert!(
+        dt.as_millis() <= budget,
+        "patch regression: {:?} > {budget}ms",
+        dt
+    );
 }
 
 #[test]
@@ -63,5 +74,9 @@ fn bench_ssr_1000() {
     let dt = t0.elapsed();
     assert!(html.len() > 10_000);
     let budget = (50.0 * mult()) as u128;
-    assert!(dt.as_millis() <= budget, "ssr regression: {:?} > {budget}ms", dt);
+    assert!(
+        dt.as_millis() <= budget,
+        "ssr regression: {:?} > {budget}ms",
+        dt
+    );
 }

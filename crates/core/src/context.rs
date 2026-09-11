@@ -9,12 +9,13 @@ pub struct ContextMap {
 
 impl std::fmt::Debug for ContextMap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ContextMap").field("entries", &self.inner.len()).finish()
+        f.debug_struct("ContextMap")
+            .field("entries", &self.inner.len())
+            .finish()
     }
 }
 
 impl ContextMap {
-
     pub fn new() -> Self {
         Self::default()
     }
@@ -37,12 +38,10 @@ impl ContextMap {
 
 #[derive(Debug, Clone)]
 pub struct ContextProvider<T: Clone + 'static> {
-
     pub value: T,
 }
 
 impl<T: Clone + 'static> ContextProvider<T> {
-
     pub fn new(value: T) -> Self {
         Self { value }
     }

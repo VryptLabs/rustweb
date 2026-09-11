@@ -1,8 +1,7 @@
-use rustweb_core::{AttrValue, HydrationError, VNode, vnode::escape_html};
+use rustweb_core::{vnode::escape_html, AttrValue, HydrationError, VNode};
 
 #[derive(Debug, Clone)]
 pub struct SsrOptions {
-
     pub hydration_ids: bool,
 
     pub checksum: bool,
@@ -12,7 +11,11 @@ pub struct SsrOptions {
 
 impl Default for SsrOptions {
     fn default() -> Self {
-        Self { hydration_ids: true, checksum: true, event_markers: true }
+        Self {
+            hydration_ids: true,
+            checksum: true,
+            event_markers: true,
+        }
     }
 }
 
@@ -25,9 +28,12 @@ pub fn render_to_string_with(opts: &SsrOptions, node: &VNode) -> String {
     let mut counter = 0u64;
     render_node(opts, node, &mut out, &mut counter);
     if opts.checksum {
-
         let is_element_root = out.starts_with('<')
-            && out.as_bytes().get(1).map(|b| b.is_ascii_alphabetic()).unwrap_or(false);
+            && out
+                .as_bytes()
+                .get(1)
+                .map(|b| b.is_ascii_alphabetic())
+                .unwrap_or(false);
         if is_element_root {
             let sum = checksum(&out);
 
@@ -55,7 +61,6 @@ fn render_node(opts: &SsrOptions, node: &VNode, out: &mut String, counter: &mut 
             }
         }
         VNode::Component(c) => {
-
             out.push_str(&format!("<!--rwc:{}-->", escape_html(&c.name)));
             render_node(opts, &c.rendered, out, counter);
             out.push_str("<!--/rwc-->");
@@ -69,7 +74,9 @@ fn render_node(opts: &SsrOptions, node: &VNode, out: &mut String, counter: &mut 
             }
             for a in &el.attrs {
                 match &a.value {
-                    AttrValue::String(v) => out.push_str(&format!(" {}=\"{}\"", a.name, escape_html(v))),
+                    AttrValue::String(v) => {
+                        out.push_str(&format!(" {}=\"{}\"", a.name, escape_html(v)))
+                    }
                     AttrValue::Bool(true) => out.push_str(&format!(" {}", a.name)),
                     AttrValue::Bool(false) => {}
                     AttrValue::Int(i) => out.push_str(&format!(" {}=\"{i}\"", a.name)),
@@ -81,7 +88,10 @@ fn render_node(opts: &SsrOptions, node: &VNode, out: &mut String, counter: &mut 
                 }
             }
 
-            const VOID: &[&str] = &["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"];
+            const VOID: &[&str] = &[
+                "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+                "source", "track", "wbr",
+            ];
             if VOID.contains(&el.tag.as_str()) {
                 out.push_str(" />");
                 return;
@@ -107,11 +117,17 @@ pub fn checksum(html: &str) -> String {
 }
 
 pub fn verify_hydration(server_html: &str, client: &VNode) -> Result<(), HydrationError> {
-    verify_hydration_with(&SsrOptions { checksum: false, ..SsrOptions::default() }, server_html, client)
+    verify_hydration_with(
+        &SsrOptions {
+            checksum: false,
+            ..SsrOptions::default()
+        },
+        server_html,
+        client,
+    )
 }
 
 fn strip_checksum(html: &str) -> String {
-
     let mut out = String::with_capacity(html.len());
     let mut rest = html;
     let marker = " data-rwh-checksum=\"";
@@ -130,7 +146,11 @@ fn strip_checksum(html: &str) -> String {
     out
 }
 
-pub fn verify_hydration_with(opts: &SsrOptions, server_html: &str, client: &VNode) -> Result<(), HydrationError> {
+pub fn verify_hydration_with(
+    opts: &SsrOptions,
+    server_html: &str,
+    client: &VNode,
+) -> Result<(), HydrationError> {
     let mut no_sum = opts.clone();
     no_sum.checksum = false;
     let expected = render_to_string_with(&no_sum, client);
@@ -151,7 +171,11 @@ pub fn verify_hydration_with(opts: &SsrOptions, server_html: &str, client: &VNod
             message: format!("HTML diverges at byte {byte} (hid {hid_str}): server {server_ctx:?} vs client {client_ctx:?}"),
         });
     }
-    Err(HydrationError::TextMismatch { hid: hid.unwrap_or_else(|| "?".into()), server: server_ctx, client: client_ctx })
+    Err(HydrationError::TextMismatch {
+        hid: hid.unwrap_or_else(|| "?".into()),
+        server: server_ctx,
+        client: client_ctx,
+    })
 }
 
 fn first_diff(a: &str, b: &str) -> (usize, Option<String>) {
@@ -191,7 +215,11 @@ mod tests {
 
     #[test]
     fn ssr_escapes_and_marks() {
-        let n = VNode::element("div", vec![Attr::new("title", "<x>&")], vec![VNode::text("<hi>&")]);
+        let n = VNode::element(
+            "div",
+            vec![Attr::new("title", "<x>&")],
+            vec![VNode::text("<hi>&")],
+        );
         let html = render_to_string(&n);
         assert!(html.contains("data-rwh=\"0\""), "{html}");
         assert!(html.contains("&lt;hi&gt;&amp;"), "{html}");
@@ -200,13 +228,21 @@ mod tests {
 
     #[test]
     fn deterministic_ids() {
-        let a = VNode::element("div", vec![], vec![VNode::element("span", vec![], vec![VNode::text("x")])]);
+        let a = VNode::element(
+            "div",
+            vec![],
+            vec![VNode::element("span", vec![], vec![VNode::text("x")])],
+        );
         assert_eq!(render_to_string(&a), render_to_string(&a));
     }
 
     #[test]
     fn hydration_ok_when_same() {
-        let n = VNode::element("main", vec![Attr::new("aria-label", "App")], vec![VNode::text("hi")]);
+        let n = VNode::element(
+            "main",
+            vec![Attr::new("aria-label", "App")],
+            vec![VNode::text("hi")],
+        );
         let html = render_to_string(&n);
         assert!(verify_hydration(&html, &n).is_ok());
     }
@@ -217,7 +253,13 @@ mod tests {
         let client = VNode::element("div", vec![], vec![VNode::text("b")]);
         let html = render_to_string(&server);
         let err = verify_hydration(&html, &client).unwrap_err();
-        assert!(matches!(err, HydrationError::TextMismatch { .. } | HydrationError::Structure { .. }), "{err}");
+        assert!(
+            matches!(
+                err,
+                HydrationError::TextMismatch { .. } | HydrationError::Structure { .. }
+            ),
+            "{err}"
+        );
     }
 
     #[test]
