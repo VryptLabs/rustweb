@@ -6,6 +6,12 @@ All notable changes to `rustweb` are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0-rc.1] - 2026-09-11
+
+Release candidate: the public API is frozen for 1.0.0. The only remaining
+gates before the final `v1.0.0` tag are non-codeable — production burn-in and
+real-browser benchmarks (see `docs/src/release-v1.md`).
+
 ### Added
 - `rustweb-testing::a11y`: offline static accessibility audit returning
   severity-ranked, path-located violations with fix hints (rules:

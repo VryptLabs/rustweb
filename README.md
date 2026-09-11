@@ -38,6 +38,18 @@ See `VERSIONING.md`. Commitments: strict semver, deprecation of at least 1 minor
 
 ## Release status
 
-**v0.2.0 (current)** — core API stable for internal use under `0.x` semver (breaking changes allowed across minors, each with a migration guide).
-Path to **v1.0**: bake in production in at least 1 real app, fuzz diff/patch, audit a11y, benchmark in real browsers, freeze the API and remove deprecated items. See `docs/src/release-v1.md`.
-Rationale for not tagging v1.0 immediately: marking v1.0 without production hours would undermine the semver stability promise itself.
+**v1.0.0-rc.1 (current)** — the public API is frozen for 1.0.0. Every codeable
+exit criterion is met and CI-enforced: 10M-iteration fuzz (apply-success
+≥ 99.99%), offline a11y audit gating the shipped example, deterministic
+hydration, root event delegation, typed props, full CI matrix, and crates
+published to crates.io with docs.rs building.
+
+The only remaining gates before the final `v1.0.0` tag are non-codeable:
+production burn-in (soak + hydration-mismatch logs) and real-browser
+benchmarks (Chrome/Firefox/WebKit) against the budgets in `crates/core/src/perf.rs`.
+See `docs/src/release-v1.md`.
+
+Rationale for the rc rather than a direct `1.0.0`: tagging `1.0.0` without
+production hours and browser benchmark data would undermine the semver
+stability promise itself. The rc freezes the API so integrators can validate
+against it during the soak window.
