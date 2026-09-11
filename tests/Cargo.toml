@@ -1,0 +1,38 @@
+[package]
+name = "rustweb-tests"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rustweb-core = { path = "../crates/core" }
+rustweb-dom = { path = "../crates/dom" }
+rustweb-ssr = { path = "../crates/ssr" }
+rustweb-router = { path = "../crates/router" }
+rustweb-testing = { path = "../crates/testing" }
+rustweb-macro = { path = "../crates/macro" }
+serde_json = "1"
+
+[[test]]
+name = "vdom_snapshot"
+path = "vdom_snapshot.rs"
+
+[[test]]
+name = "hydration_roundtrip"
+path = "hydration_roundtrip.rs"
+
+[[test]]
+name = "patch_properties"
+path = "patch_properties.rs"
+
+[[test]]
+name = "headless"
+path = "headless.rs"
+
+[[test]]
+name = "macro_smoke"
+path = "macro_smoke.rs"
+
+[[test]]
+name = "bench_regression"
+path = "bench_regression.rs"

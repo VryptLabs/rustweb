@@ -1,0 +1,12 @@
+[package]
+name = "rustweb-testing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Unit harness, VDOM snapshot testing, headless browser helpers"
+
+[dependencies]
+rustweb-core.workspace = true
+rustweb-ssr.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,5 @@
+/target
+/dist
+docs/book
+.env
+**/*.rs.bk

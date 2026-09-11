@@ -1,0 +1,17 @@
+[package]
+name = "rustweb-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Build tooling: new/build/serve, wasm-opt, code-splitting integration"
+publish = true
+
+[[bin]]
+name = "rustweb"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

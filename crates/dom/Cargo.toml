@@ -1,0 +1,20 @@
+[package]
+name = "rustweb-dom"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "DOM binding, keyed diff/patch applier, root event delegation"
+
+[dependencies]
+rustweb-core.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Node", "Text", "Event", "EventTarget", "HtmlElement", "DomTokenList", "CssStyleDeclaration"] }
+js-sys = "0.3"
+
+[features]
+default = []
+ssr = ["rustweb-core/ssr"]

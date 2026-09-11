@@ -1,0 +1,11 @@
+[package]
+name = "rustweb-router"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Nested routes, guards, lazy-loaded routes, code-splitting hooks"
+
+[dependencies]
+rustweb-core.workspace = true
+thiserror.workspace = true
+serde.workspace = true

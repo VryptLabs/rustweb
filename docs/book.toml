@@ -1,0 +1,8 @@
+[book]
+title = "rustweb Guide"
+authors = ["rustweb contributors"]
+language = "en"
+
+[build]
+build-dir = "book"
+create-missing = false

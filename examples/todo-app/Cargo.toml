@@ -1,0 +1,12 @@
+[package]
+name = "todo-app"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rustweb-core = { path = "../../crates/core" }
+rustweb-dom = { path = "../../crates/dom" }
+rustweb-ssr = { path = "../../crates/ssr" }
+rustweb-router = { path = "../../crates/router" }
+rustweb-macro = { path = "../../crates/macro" }

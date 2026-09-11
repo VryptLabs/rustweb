@@ -1,0 +1,10 @@
+[package]
+name = "rustweb-ssr"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Server-side rendering to string + hydration markers, mismatch detection"
+
+[dependencies]
+rustweb-core.workspace = true
+thiserror.workspace = true

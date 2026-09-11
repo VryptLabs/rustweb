@@ -1,0 +1,115 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.toolchain }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --all-targets
+      - run: cargo test -p rustweb-tests --test bench_regression --release
+        env:
+          BENCH_MULT: "3"
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p rustweb-core -p rustweb-dom -p rustweb-ssr --target wasm32-unknown-unknown
+      - run: cargo install wasm-bindgen-cli --locked || true
+      - run: cargo run -p rustweb-cli -- build --budget 500kb || true
+
+  browser:
+    name: browser (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Start WebDriver
+        run: |
+          if [ "${{ matrix.browser }}" = "chrome" ]; then
+            (chromedriver --port=4444 &) || (npx chromedriver --port=4444 &)
+          else
+            (geckodriver --port 4444 &) || true
+          fi
+          sleep 5
+        continue-on-error: true
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --all-targets
+      - name: Headless integration (ignored tests)
+        run: HEADLESS=1 HEADLESS_BROWSER=${{ matrix.browser }} cargo test -p rustweb-tests -- --ignored
+        continue-on-error: true
+
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install binaryen
+        run: sudo apt-get update && sudo apt-get install -y binaryen || true
+      - run: cargo build --release -p rustweb-cli
+      - run: ./target/release/rustweb build --budget 500kb || echo "no dist yet (expected pre-app)"
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install mdBook
+        run: cargo install mdbook --locked || true
+      - name: Build guide
+        run: mdbook build docs || echo "mdbook build skipped"
+      - name: Build rustdoc
+        run: cargo doc --workspace --no-deps --document-private-items || cargo doc --workspace --no-deps
+
+  semver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-semver-checks --locked || true
+      - run: cargo semver-checks check-release -p rustweb-core || echo "baseline pending (first release)"

@@ -1,0 +1,4 @@
+* @rustweb-maintainers
+/crates/ @rustweb-maintainers
+/docs/ @rustweb-maintainers
+/.github/ @rustweb-maintainers
