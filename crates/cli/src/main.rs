@@ -117,8 +117,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rustweb-core = "0.1"
-rustweb-dom = "0.1"
+rustweb-core = "0.2"
+rustweb-dom = "0.2"
 
 [profile.release]
 opt-level = "z"
