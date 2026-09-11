@@ -36,3 +36,11 @@ path = "macro_smoke.rs"
 [[test]]
 name = "bench_regression"
 path = "bench_regression.rs"
+
+[[test]]
+name = "fuzz_diff"
+path = "fuzz_diff.rs"
+
+[[test]]
+name = "ssr_golden"
+path = "ssr_golden.rs"

@@ -13,3 +13,5 @@
 - [Error handling](./errors.md)
 - [CLI](./cli.md)
 - [Toward v1.0](./release-v1.md)
+- [Changelog](../../CHANGELOG.md)
+- [Migration](../../MIGRATION.md)

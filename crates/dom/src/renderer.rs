@@ -1,19 +1,18 @@
 use crate::patch::Patch;
 use rustweb_core::{ComponentError, VNode};
-use std::rc::Rc;
 
 pub fn apply_patches_to_tree(mut root: VNode, patches: &[Patch]) -> Result<VNode, ComponentError> {
-    let mut removes: Vec<&Patch> = patches
+    let mut removes: Vec<&[usize]> = patches
         .iter()
-        .filter(|p| matches!(p, Patch::Remove { .. }))
+        .filter_map(|p| match p {
+            Patch::Remove { path } => Some(path.as_slice()),
+            _ => None,
+        })
         .collect();
-    removes.sort_by(|a, b| b.path().cmp(a.path()));
-    for p in removes {
-        if let Patch::Remove { path } = p {
-            remove_at(&mut root, path)?;
-        }
+    removes.sort_by(|a, b| b.cmp(a));
+    for path in removes {
+        remove_at(&mut root, path)?;
     }
-
     for p in patches {
         match p {
             Patch::Remove { .. } => {}
@@ -46,19 +45,6 @@ fn err(component: &str, msg: String) -> ComponentError {
     }
 }
 
-#[allow(dead_code)]
-fn children_mut(node: &mut VNode) -> Option<&mut Vec<VNode>> {
-    let mut cur = node;
-    loop {
-        match cur {
-            VNode::Element(el) => return Some(&mut el.children),
-            VNode::Fragment(c) => return Some(c),
-            VNode::Component(c) => cur = &mut c.rendered,
-            VNode::Text(_) | VNode::Empty => return None,
-        }
-    }
-}
-
 fn resolve_mut(mut cur: &mut VNode) -> &mut VNode {
     loop {
         match cur {
@@ -75,7 +61,7 @@ fn get_mut<'a>(root: &'a mut VNode, path: &[usize]) -> Result<&'a mut VNode, Com
         let kids = match cur {
             VNode::Element(el) => &mut el.children,
             VNode::Fragment(c) => c,
-            VNode::Component(_) => unreachable!("resolve_mut strips components"),
+            VNode::Component(_) => unreachable!(),
             VNode::Text(_) | VNode::Empty => {
                 return Err(err("Renderer", format!("path {path:?} descends into leaf")));
             }
@@ -90,21 +76,16 @@ fn get_mut<'a>(root: &'a mut VNode, path: &[usize]) -> Result<&'a mut VNode, Com
     Ok(cur)
 }
 
-fn parent_mut<'a>(root: &'a mut VNode, path: &[usize]) -> Result<&'a mut VNode, ComponentError> {
-    if path.is_empty() {
-        return Err(err("Renderer", "parent of root requested".into()));
-    }
-    get_mut(root, &path[..path.len() - 1])
-}
-
 fn remove_at(root: &mut VNode, path: &[usize]) -> Result<(), ComponentError> {
     if path.is_empty() {
         *root = VNode::Empty;
         return Ok(());
     }
-    let parent = parent_mut(root, path)?;
-
+    let parent = get_mut(root, &path[..path.len() - 1])?;
+    let parent = resolve_mut(parent);
     let kids = match parent {
+        VNode::Element(el) => &mut el.children,
+        VNode::Fragment(f) => f,
         VNode::Component(c) => match &mut *c.rendered {
             VNode::Element(el) => &mut el.children,
             VNode::Fragment(f) => f,
@@ -119,8 +100,6 @@ fn remove_at(root: &mut VNode, path: &[usize]) -> Result<(), ComponentError> {
                 ));
             }
         },
-        VNode::Element(el) => &mut el.children,
-        VNode::Fragment(f) => f,
         VNode::Text(_) | VNode::Empty => {
             return Err(err(
                 "Renderer",
@@ -156,11 +135,11 @@ fn insert_at(
     node: VNode,
 ) -> Result<(), ComponentError> {
     let parent = if parent_path.is_empty() {
-        root
+        &mut *root
     } else {
         get_mut(root, parent_path)?
     };
-
+    let parent = resolve_mut(parent);
     let kids = match parent {
         VNode::Element(el) => &mut el.children,
         VNode::Fragment(f) => f,
@@ -182,11 +161,8 @@ fn insert_at(
                 if !matches!(old, VNode::Empty) {
                     f.push(old);
                 }
-                if index <= f.len() {
-                    f.insert(index.min(f.len()), node);
-                } else {
-                    f.push(node);
-                }
+                let idx = index.min(f.len());
+                f.insert(idx, node);
                 return Ok(());
             }
             unreachable!()
@@ -199,11 +175,7 @@ fn insert_at(
 
 fn set_text_at(root: &mut VNode, path: &[usize], text: &str) -> Result<(), ComponentError> {
     let slot = get_mut(root, path)?;
-
-    let target = match slot {
-        VNode::Component(c) => &mut *c.rendered,
-        other => other,
-    };
+    let target = resolve_mut(slot);
     match target {
         VNode::Text(t) => {
             *t = text.to_owned();
@@ -223,17 +195,8 @@ fn set_attr_at(
     value: rustweb_core::AttrValue,
 ) -> Result<(), ComponentError> {
     let slot = get_mut(root, path)?;
-    let el = match slot {
+    let el = match resolve_mut(slot) {
         VNode::Element(el) => el,
-        VNode::Component(c) => match &mut *c.rendered {
-            VNode::Element(el) => el,
-            _ => {
-                return Err(err(
-                    "Renderer",
-                    format!("SetAttr targeted non-element at {path:?}"),
-                ))
-            }
-        },
         _ => {
             return Err(err(
                 "Renderer",
@@ -241,24 +204,18 @@ fn set_attr_at(
             ))
         }
     };
-    match el.attrs.iter_mut().find(|a| a.name == name) {
-        Some(a) => a.value = value,
-        None => el.attrs.push(rustweb_core::Attr {
-            name: name.to_owned(),
-            value,
-        }),
-    }
+    el.attrs.retain(|a| a.name != name);
+    el.attrs.push(rustweb_core::Attr {
+        name: name.to_owned(),
+        value,
+    });
     Ok(())
 }
 
 fn remove_attr_at(root: &mut VNode, path: &[usize], name: &str) -> Result<(), ComponentError> {
     let slot = get_mut(root, path)?;
-    let el = match slot {
+    let el = match resolve_mut(slot) {
         VNode::Element(el) => el,
-        VNode::Component(c) => match &mut *c.rendered {
-            VNode::Element(el) => el,
-            _ => return Ok(()),
-        },
         _ => return Ok(()),
     };
     el.attrs.retain(|a| a.name != name);
@@ -272,12 +229,8 @@ fn set_listener_at(
     id: &str,
 ) -> Result<(), ComponentError> {
     let slot = get_mut(root, path)?;
-    let el = match slot {
+    let el = match resolve_mut(slot) {
         VNode::Element(el) => el,
-        VNode::Component(c) => match &mut *c.rendered {
-            VNode::Element(el) => el,
-            _ => return Ok(()),
-        },
         _ => return Ok(()),
     };
     match el.listeners.iter_mut().find(|(e, _)| e == event) {
@@ -289,12 +242,8 @@ fn set_listener_at(
 
 fn remove_listener_at(root: &mut VNode, path: &[usize], event: &str) -> Result<(), ComponentError> {
     let slot = get_mut(root, path)?;
-    let el = match slot {
+    let el = match resolve_mut(slot) {
         VNode::Element(el) => el,
-        VNode::Component(c) => match &mut *c.rendered {
-            VNode::Element(el) => el,
-            _ => return Ok(()),
-        },
         _ => return Ok(()),
     };
     el.listeners.retain(|(e, _)| e != event);
@@ -312,6 +261,7 @@ fn move_keyed_at(
     } else {
         get_mut(root, parent_path)?
     };
+    let parent = resolve_mut(parent);
     let kids = match parent {
         VNode::Element(el) => &mut el.children,
         VNode::Fragment(f) => f,
@@ -362,15 +312,11 @@ fn guard<T>(
 
 pub struct Renderer {
     current: VNode,
-    _delegator_note: (),
 }
 
 impl Renderer {
     pub fn new(initial: VNode) -> Self {
-        Self {
-            current: initial,
-            _delegator_note: (),
-        }
+        Self { current: initial }
     }
 
     pub fn current(&self) -> &VNode {
@@ -388,10 +334,8 @@ impl Renderer {
         })?;
         let n = patches.len();
         let committed = guard(component, "patch", || apply_patches_to_tree(old, &patches))?;
-
         debug_assert_eq!(committed, next, "patch applier diverged from diff target");
         self.current = next;
-        let _ = (component, Rc::new(()));
         Ok(n)
     }
 }

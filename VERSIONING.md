@@ -2,7 +2,7 @@
 
 ## Semver commitment
 
-- `0.x` (current, `0.1.0`): **minor = potentially breaking**, patch = fixes only.
+- `0.x` (current, `0.2.0`): **minor = potentially breaking**, patch = fixes only.
   Every breaking change in a minor release must include a `MIGRATION.md` delta plus a `#[deprecated]` shim wherever feasible.
 - `1.x` (target): **major = breaking**, minor = additive and backward-compatible,
   patch = fixes. The public API covers all `pub` items across the 7 crates, the `html!`
@@ -38,7 +38,7 @@
 ## Rollback plan
 ```
 
-Initial delta: `MIGRATION.md` (v0.1 baseline — no breaking changes from a prior version yet).
+Initial delta: `MIGRATION.md` (v0.1 → v0.2 was non-breaking; no migration steps yet from a prior major).
 
 ## v1.0 exit criteria (see `docs/src/release-v1.md`)
 

@@ -1,4 +1,5 @@
 use rustweb_core::{Attr, Cmd, Component, Context, Props, RenderError, VNode};
+use rustweb_dom::{diff, Renderer};
 use rustweb_macro::html;
 use rustweb_router::{GuardResult, LazyRoute, Route, Router};
 
@@ -128,16 +129,20 @@ fn main() {
         Default::default(),
     );
     let mut state = App::create(&ctx).expect("create");
-    state
-        .update(&ctx, Msg::Add("learn rustweb".into()))
-        .expect("update");
-    state.update(&ctx, Msg::Toggle(0)).expect("update");
-    let tree = state.view(&ctx).expect("view");
+    let mut renderer = Renderer::new(state.view(&ctx).expect("view"));
 
-    let html = rustweb_ssr::render_to_string(&tree);
-    println!("{html}");
+    let msgs = [Msg::Add("learn rustweb".into()), Msg::Toggle(0)];
+    for msg in msgs {
+        state.update(&ctx, msg).expect("update");
+        let next = state.view(&ctx).expect("view");
+        let patches = diff(renderer.current(), &next);
+        eprintln!("msg → {} patches", patches.len());
+        renderer.update("App", next).expect("patch");
+    }
 
-    rustweb_ssr::verify_hydration(&html, &tree).expect("hydrate");
+    let html = rustweb_ssr::render_to_string(renderer.current());
+    println!("=== final SSR ===\n{html}");
+    rustweb_ssr::verify_hydration(&html, renderer.current()).expect("hydrate");
 
     let hit = router()
         .resolve("/todos/1")

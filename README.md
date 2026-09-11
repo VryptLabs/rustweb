@@ -38,6 +38,6 @@ See `VERSIONING.md`. Commitments: strict semver, deprecation of at least 1 minor
 
 ## Release status
 
-**v0.1.0 foundation (current)** — core API stable for internal use under `0.x` semver (breaking changes allowed across minors, each with a migration guide).
+**v0.2.0 (current)** — core API stable for internal use under `0.x` semver (breaking changes allowed across minors, each with a migration guide).
 Path to **v1.0**: bake in production in at least 1 real app, fuzz diff/patch, audit a11y, benchmark in real browsers, freeze the API and remove deprecated items. See `docs/src/release-v1.md`.
 Rationale for not tagging v1.0 immediately: marking v1.0 without production hours would undermine the semver stability promise itself.

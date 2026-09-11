@@ -4,45 +4,35 @@ use std::collections::{HashMap, HashSet};
 
 pub fn diff(old: &VNode, new: &VNode) -> Vec<Patch> {
     let mut patches = Vec::new();
-    diff_node(old, new, &mut Vec::new(), &mut patches);
+    diff_node(old, new, &mut Vec::new(), &mut Vec::new(), &mut patches);
     patches
 }
 
-fn child_list(n: &VNode) -> Option<&[VNode]> {
-    match n {
-        VNode::Element(el) => Some(&el.children),
-        VNode::Fragment(c) => Some(c),
-        VNode::Component(c) => Some(std::slice::from_ref(&c.rendered)),
-        VNode::Text(_) | VNode::Empty => None,
-    }
-}
-
-fn diff_node(old: &VNode, new: &VNode, path: &mut PatchPath, out: &mut Vec<Patch>) {
+fn diff_node(
+    old: &VNode,
+    new: &VNode,
+    old_path: &mut PatchPath,
+    new_path: &mut PatchPath,
+    out: &mut Vec<Patch>,
+) {
     match (old, new) {
         (VNode::Component(o), VNode::Component(n)) => {
             if o.name != n.name || o.props_json != n.props_json || o.key != n.key {
                 out.push(Patch::Replace {
-                    path: path.clone(),
+                    path: new_path.clone(),
                     new: new.clone(),
                 });
                 return;
             }
-            diff_node(&o.rendered, &n.rendered, path, out);
+            diff_node(&o.rendered, &n.rendered, old_path, new_path, out);
             return;
         }
         (VNode::Component(o), _) => {
-            let mut tmp = Vec::new();
-            let mut sub_path = path.clone();
-            diff_node(&o.rendered, new, &mut sub_path, &mut tmp);
-
-            out.extend(tmp);
+            diff_node(&o.rendered, new, old_path, new_path, out);
             return;
         }
         (_, VNode::Component(n)) => {
-            let mut tmp = Vec::new();
-            let mut sub_path = path.clone();
-            diff_node(old, &n.rendered, &mut sub_path, &mut tmp);
-            out.extend(tmp);
+            diff_node(old, &n.rendered, old_path, new_path, out);
             return;
         }
         _ => {}
@@ -53,38 +43,35 @@ fn diff_node(old: &VNode, new: &VNode, path: &mut PatchPath, out: &mut Vec<Patch
         (VNode::Text(a), VNode::Text(b)) => {
             if a != b {
                 out.push(Patch::SetText {
-                    path: path.clone(),
+                    path: new_path.clone(),
                     text: b.clone(),
                 });
             }
         }
         (VNode::Element(a), VNode::Element(b)) => {
-            if a.tag != b.tag || a.namespace != b.namespace {
+            if a.tag != b.tag || a.namespace != b.namespace || a.key != b.key {
                 out.push(Patch::Replace {
-                    path: path.clone(),
+                    path: new_path.clone(),
                     new: new.clone(),
                 });
                 return;
             }
-            diff_attrs(a, b, path, out);
-            diff_listeners(a, b, path, out);
-
-            diff_children(&a.children, &b.children, path, out);
+            diff_attrs(a, b, new_path, out);
+            diff_listeners(a, b, new_path, out);
+            diff_children(&a.children, &b.children, old_path, new_path, out);
         }
         (VNode::Fragment(a), VNode::Fragment(b)) => {
-            diff_children(a, b, path, out);
+            diff_children(a, b, old_path, new_path, out);
         }
-
         _ => {
             if old != new {
                 out.push(Patch::Replace {
-                    path: path.clone(),
+                    path: new_path.clone(),
                     new: new.clone(),
                 });
             }
         }
     }
-    let _ = child_list;
 }
 
 fn diff_attrs(
@@ -93,31 +80,21 @@ fn diff_attrs(
     path: &[usize],
     out: &mut Vec<Patch>,
 ) {
-    let old_map: HashMap<&str, _> = old
-        .attrs
-        .iter()
-        .map(|a| (a.name.as_str(), &a.value))
-        .collect();
-    let new_map: HashMap<&str, _> = new
-        .attrs
-        .iter()
-        .map(|a| (a.name.as_str(), &a.value))
-        .collect();
-    for (name, val) in &new_map {
-        match old_map.get(name) {
-            Some(old_val) if *old_val == *val => {}
-            _ => out.push(Patch::SetAttr {
-                path: path.to_vec(),
-                name: name.to_string(),
-                value: (*val).clone(),
-            }),
-        }
+    if old.attrs == new.attrs {
+        return;
     }
-    for name in old_map.keys() {
-        if !new_map.contains_key(name) {
+    for a in &new.attrs {
+        out.push(Patch::SetAttr {
+            path: path.to_vec(),
+            name: a.name.clone(),
+            value: a.value.clone(),
+        });
+    }
+    for a in &old.attrs {
+        if !new.attrs.iter().any(|n| n.name == a.name) {
             out.push(Patch::RemoveAttr {
                 path: path.to_vec(),
-                name: name.to_string(),
+                name: a.name.clone(),
             });
         }
     }
@@ -158,7 +135,13 @@ fn diff_listeners(
     }
 }
 
-fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out: &mut Vec<Patch>) {
+fn diff_children(
+    old: &[VNode],
+    new: &[VNode],
+    old_parent: &mut PatchPath,
+    new_parent: &mut PatchPath,
+    out: &mut Vec<Patch>,
+) {
     if old.is_empty() && new.is_empty() {
         return;
     }
@@ -168,19 +151,20 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
     if old_all_unkeyed && new_all_unkeyed {
         let common = old.len().min(new.len());
         for i in 0..common {
-            parent_path.push(i);
-            diff_node(&old[i], &new[i], parent_path, out);
-            parent_path.pop();
+            old_parent.push(i);
+            new_parent.push(i);
+            diff_node(&old[i], &new[i], old_parent, new_parent, out);
+            old_parent.pop();
+            new_parent.pop();
         }
-
         for i in (new.len()..old.len()).rev() {
-            let mut p = parent_path.clone();
+            let mut p = old_parent.clone();
             p.push(i);
             out.push(Patch::Remove { path: p });
         }
         for (i, node) in new.iter().enumerate().skip(old.len()) {
             out.push(Patch::Create {
-                path: parent_path.clone(),
+                path: new_parent.clone(),
                 index: i,
                 node: node.clone(),
             });
@@ -188,154 +172,114 @@ fn diff_children(old: &[VNode], new: &[VNode], parent_path: &mut Vec<usize>, out
         return;
     }
 
-    let mut old_key_idx: HashMap<&str, usize> = HashMap::new();
-    let mut dup_old_keys: HashSet<&str> = HashSet::new();
+    let old_has_key = old.iter().any(|n| n.key().is_some());
+    let new_has_key = new.iter().any(|n| n.key().is_some());
+    let all_keyed = old.iter().all(|n| n.key().is_some()) && new.iter().all(|n| n.key().is_some());
+    if (old_has_key || new_has_key) && !all_keyed {
+        let common = old.len().min(new.len());
+        for i in 0..common {
+            old_parent.push(i);
+            new_parent.push(i);
+            diff_node(&old[i], &new[i], old_parent, new_parent, out);
+            old_parent.pop();
+            new_parent.pop();
+        }
+        for i in (new.len()..old.len()).rev() {
+            let mut p = old_parent.clone();
+            p.push(i);
+            out.push(Patch::Remove { path: p });
+        }
+        for (i, node) in new.iter().enumerate().skip(old.len()) {
+            out.push(Patch::Create {
+                path: new_parent.clone(),
+                index: i,
+                node: node.clone(),
+            });
+        }
+        return;
+    }
+
+    let mut old_key_first: HashMap<&str, usize> = HashMap::new();
     for (i, n) in old.iter().enumerate() {
         if let Some(k) = n.key() {
-            if old_key_idx.insert(k, i).is_some() {
-                dup_old_keys.insert(k);
-            }
-        }
-    }
-    let mut new_keys: HashSet<&str> = HashSet::new();
-    for n in new.iter() {
-        if let Some(k) = n.key() {
-            new_keys.insert(k);
+            old_key_first.entry(k).or_insert(i);
         }
     }
 
-    let mut removals: Vec<usize> = Vec::new();
-    for (i, n) in old.iter().enumerate() {
-        if let Some(k) = n.key() {
-            if dup_old_keys.contains(k) {
-                continue;
-            }
-            if !new_keys.contains(k) {
-                removals.push(i);
-            }
-        }
-    }
-    removals.sort_unstable_by(|a, b| b.cmp(a));
-    for i in removals {
-        let mut p = parent_path.clone();
-        p.push(i);
-        out.push(Patch::Remove { path: p });
-    }
-
-    let mut old_pos_seq: Vec<usize> = Vec::new();
-    let mut new_idx_for_seq: Vec<usize> = Vec::new();
-
-    let mut old_unkeyed: Vec<usize> = old
-        .iter()
-        .enumerate()
-        .filter(|(_, n)| n.key().is_none())
-        .map(|(i, _)| i)
-        .collect();
-    let mut used_old = vec![false; old.len()];
-    for &r in &{
-        let mut kept: Vec<usize> = Vec::new();
-        for (i, n) in old.iter().enumerate() {
-            let remove = if let Some(k) = n.key() {
-                !dup_old_keys.contains(k) && !new_keys.contains(k)
-            } else {
-                false
-            };
-            if !remove {
-                kept.push(i);
-            }
-        }
-        kept
-    } {
-        let _ = r;
-    }
+    let mut matched_old = vec![false; old.len()];
+    let mut matched_new_keys: HashSet<&str> = HashSet::new();
+    let mut keyed_pairs: Vec<(usize, usize)> = Vec::new();
 
     for (new_i, new_node) in new.iter().enumerate() {
         if let Some(k) = new_node.key() {
-            if dup_old_keys.contains(k) {
-                parent_path.push(new_i);
-                let old_node = old.get(new_i);
-                match old_node {
-                    Some(o) => diff_node(o, new_node, parent_path, out),
-                    None => out.push(Patch::Create {
-                        path: parent_path.clone(),
-                        index: new_i,
-                        node: new_node.clone(),
-                    }),
-                }
-                parent_path.pop();
-                continue;
-            }
-            match old_key_idx.get(k) {
-                Some(&old_i) => {
-                    used_old[old_i] = true;
-                    parent_path.push(new_i);
-                    diff_node(&old[old_i], new_node, parent_path, out);
-                    parent_path.pop();
-                    old_pos_seq.push(old_i);
-                    new_idx_for_seq.push(new_i);
-                }
-                None => {
-                    out.push(Patch::Create {
-                        path: parent_path.clone(),
-                        index: new_i,
-                        node: new_node.clone(),
-                    });
-                }
-            }
-        } else {
-            let slot = old_unkeyed.iter().find(|&&oi| !used_old[oi]).copied();
-            match slot {
-                Some(old_i) => {
-                    used_old[old_i] = true;
-
-                    old_unkeyed.retain(|&x| x != old_i);
-                    parent_path.push(new_i);
-                    diff_node(&old[old_i], new_node, parent_path, out);
-                    parent_path.pop();
-                }
-                None => {
-                    out.push(Patch::Create {
-                        path: parent_path.clone(),
-                        index: new_i,
-                        node: new_node.clone(),
-                    });
+            let already = !matched_new_keys.insert(k);
+            if let Some(&old_i) = old_key_first.get(k) {
+                if !already && !matched_old[old_i] {
+                    matched_old[old_i] = true;
+                    keyed_pairs.push((old_i, new_i));
+                    continue;
                 }
             }
         }
+        out.push(Patch::Create {
+            path: new_parent.clone(),
+            index: new_i,
+            node: new_node.clone(),
+        });
     }
 
-    let mut leftover_unkeyed: Vec<usize> = Vec::new();
-    for (i, n) in old.iter().enumerate() {
-        if !used_old[i] && n.key().is_none() {
-            leftover_unkeyed.push(i);
-        }
-
-        if !used_old[i] && n.key().is_some_and(|k| dup_old_keys.contains(k)) && i >= new.len() {
-            leftover_unkeyed.push(i);
-        }
-    }
-    leftover_unkeyed.sort_unstable_by(|a, b| b.cmp(a));
-    for i in leftover_unkeyed {
-        let mut p = parent_path.clone();
+    let mut removals: Vec<usize> = old
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !matched_old[*i])
+        .map(|(i, _)| i)
+        .collect();
+    removals.sort_unstable_by(|a, b| b.cmp(a));
+    for i in removals {
+        let mut p = old_parent.clone();
         p.push(i);
         out.push(Patch::Remove { path: p });
     }
 
-    if old_pos_seq.len() > 1 {
+    let has_unkeyed_new = new.iter().any(|n| n.key().is_none());
+    let emit_all_moves = has_unkeyed_new || keyed_pairs.len() <= 1;
+
+    if !emit_all_moves {
+        let old_pos_seq: Vec<usize> = keyed_pairs.iter().map(|p| p.0).collect();
         let lis = lis_indices(&old_pos_seq);
         let in_lis: HashSet<usize> = lis.into_iter().collect();
-        for (seq_pos, &new_i) in new_idx_for_seq.iter().enumerate() {
-            if in_lis.contains(&seq_pos) {
-                continue;
+        for (seq_pos, &(old_i, new_i)) in keyed_pairs.iter().enumerate() {
+            old_parent.push(old_i);
+            new_parent.push(new_i);
+            diff_node(&old[old_i], &new[new_i], old_parent, new_parent, out);
+            old_parent.pop();
+            new_parent.pop();
+            if !in_lis.contains(&seq_pos) {
+                let key = new[new_i].key().unwrap_or_default().to_string();
+                out.push(Patch::Move {
+                    path: new_parent.clone(),
+                    from: old_i,
+                    to: new_i,
+                    key,
+                });
             }
-            let old_i = old_pos_seq[seq_pos];
-            let key = new[new_i].key().unwrap_or_default().to_string();
-            out.push(Patch::Move {
-                path: parent_path.clone(),
-                from: old_i,
-                to: new_i,
-                key,
-            });
+        }
+    } else {
+        for &(old_i, new_i) in &keyed_pairs {
+            old_parent.push(old_i);
+            new_parent.push(new_i);
+            diff_node(&old[old_i], &new[new_i], old_parent, new_parent, out);
+            old_parent.pop();
+            new_parent.pop();
+            if old_i != new_i {
+                let key = new[new_i].key().unwrap_or_default().to_string();
+                out.push(Patch::Move {
+                    path: new_parent.clone(),
+                    from: old_i,
+                    to: new_i,
+                    key,
+                });
+            }
         }
     }
 }
@@ -367,7 +311,6 @@ fn lis_indices(seq: &[usize]) -> Vec<usize> {
             prev[i] = Some(tails[lo - 1]);
         }
     }
-
     let mut out = Vec::with_capacity(tails.len());
     let mut cur = Some(*tails.last().unwrap());
     while let Some(c) = cur {
@@ -381,7 +324,7 @@ fn lis_indices(seq: &[usize]) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustweb_core::{Attr, VNode};
+    use rustweb_core::Attr;
 
     fn el(tag: &str, key: Option<&str>, children: Vec<VNode>) -> VNode {
         let mut e = rustweb_core::Element::new(tag, children);
@@ -472,5 +415,35 @@ mod tests {
         let p = diff(&old, &new);
         assert!(p.iter().any(|x| matches!(x, Patch::SetText { .. })));
         assert!(p.iter().any(|x| matches!(x, Patch::Create { .. })));
+    }
+
+    #[test]
+    fn remove_path_uses_old_navigation() {
+        let inner_old = el(
+            "span",
+            Some("x"),
+            vec![el("i", Some("a"), vec![]), el("i", Some("b"), vec![])],
+        );
+        let inner_new = el("span", Some("x"), vec![el("i", Some("a"), vec![])]);
+        let old = VNode::element(
+            "main",
+            vec![],
+            vec![el("div", Some("z"), vec![]), inner_old],
+        );
+        let new = VNode::element("main", vec![], vec![inner_new]);
+        let p = diff(&old, &new);
+        let mut removes: Vec<Vec<usize>> = p
+            .iter()
+            .filter_map(|x| match x {
+                Patch::Remove { path } => Some(path.clone()),
+                _ => None,
+            })
+            .collect();
+        removes.sort();
+        assert_eq!(
+            removes,
+            vec![vec![0], vec![1, 1]],
+            "remove paths must use old navigation, got: {p:?}"
+        );
     }
 }

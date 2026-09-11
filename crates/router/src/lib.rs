@@ -265,16 +265,24 @@ impl Router {
                     .find(|k| k.segment.is_empty() || k.segment == "/")
                     .cloned();
                 if let Some(idx) = index_hit {
+                    let saved_chain_idx = chain.len();
                     for g in &idx.guards {
                         chain.push((g.clone(), idx.name.clone()));
                     }
-
                     let mut sub_kids = idx.children.clone();
                     if let Some(lazy) = &idx.lazy {
                         sub_kids.extend(lazy.load()?.clone());
                     }
-                    let _ = sub_kids;
-                    return Ok(idx.view.clone());
+                    if sub_kids.is_empty() {
+                        return Ok(idx.view.clone());
+                    }
+                    match self.match_tree(&sub_kids, segs, next, ctx, chain) {
+                        Ok(v) => return Ok(v),
+                        Err(RouterError::NotFound(_)) => {
+                            chain.truncate(saved_chain_idx);
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
                 return Ok(r.view.clone());
             }
@@ -300,7 +308,7 @@ enum ResolveStep {
 fn advance(pattern: &str, segs: &[&str], pos: usize) -> Option<usize> {
     let at_end = pos >= segs.len();
     if pattern.is_empty() || pattern == "/" {
-        return if at_end { Some(0) } else { None };
+        return Some(0);
     }
     if pattern == "*" {
         return Some(segs.len() - pos);
@@ -459,5 +467,26 @@ mod tests {
             hit.params.get("wildcard").map(|s| s.as_str()),
             Some("a/b/c")
         );
+    }
+
+    #[test]
+    fn nested_index_recurses_into_grand_children() {
+        let r =
+            Router::new()
+                .route(Route::new("app", "App").child(
+                    Route::new("", "AppIndex").child(Route::new("settings", "AppSettings")),
+                ));
+        let hit = r.resolve("/app/settings").unwrap();
+        assert_eq!(
+            hit.view, "AppSettings",
+            "grand index child must be reachable"
+        );
+    }
+
+    #[test]
+    fn index_without_children_returns_own_view() {
+        let r = Router::new().route(Route::new("app", "App").child(Route::new("", "AppIndex")));
+        let hit = r.resolve("/app").unwrap();
+        assert_eq!(hit.view, "AppIndex");
     }
 }
