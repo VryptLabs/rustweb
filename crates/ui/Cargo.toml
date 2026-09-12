@@ -1,0 +1,12 @@
+[package]
+name = "rustweb-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Headless accessible UI primitives for rustweb"
+
+[dependencies]
+rustweb-core.workspace = true
+rustweb-macro.workspace = true
+thiserror.workspace = true
+serde.workspace = true
