@@ -57,6 +57,35 @@ jobs:
       - run: cargo install wasm-bindgen-cli --locked || true
       - run: cargo run -p rustweb-cli -- build --budget 500kb || true
 
+  bench:
+    name: native benchmarks (criterion)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run criterion
+        run: cargo bench -p rustweb-tests --bench render -- --save-baseline ci --measurement-time 3 --sample-size 20
+      - name: Upload criterion report
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-report
+          path: target/criterion
+
+  wasm-bench:
+    name: browser benchmarks (chrome)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Run headless browser benchmarks
+        run: wasm-pack test crates/dom --headless --chrome --release
+
   browser:
     name: browser (${{ matrix.browser }})
     runs-on: ubuntu-latest

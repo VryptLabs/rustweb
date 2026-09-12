@@ -45,10 +45,12 @@ Open (cannot be satisfied by code alone; these gate a truthful `1.0.0`):
 1. **Production burn-in**: run at least one real application for the agreed soak
    window, collecting `RenderSample` timing and any hydration mismatch logs, and
    freeze the `data-rwh*` format as stable.
-2. **Real-browser benchmarks**: measure render/patch on Chrome / Firefox / WebKit
-   against the budgets in `crates/core/src/perf.rs`, and (once a trunk-parity
-   dev server exists) run `axe-core` as the runtime complement to the static
-   linter.
+2. **Real-browser benchmarks**: harness is in place and CI-enforced —
+   `crates/dom/src/bench_wasm.rs` runs the diff/apply/SSR hot paths in headless
+   Chrome via `wasm-pack test` (job `wasm-bench`), and Criterion native benches
+   (job `bench`) publish a baseline report. Remaining: confirm the measured
+   numbers stay within the budgets in `crates/core/src/perf.rs` across the
+   supported browsers (Chrome/Firefox/WebKit) during the soak window.
 3. **1.0-rc**: once the two above are met, remove any expired `#[deprecated]`
    items, finalise `MIGRATION.md`, and cut `v1.0.0-rc.1`.
 4. **1.0**: tag `v1.0.0` plus staged release in dependency order

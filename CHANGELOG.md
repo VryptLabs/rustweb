@@ -6,6 +6,19 @@ All notable changes to `rustweb` are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Criterion native benchmark suite (`tests/benches/render.rs`) over 10–5000-row
+  keyed lists for `diff`, `apply`, and `render_to_string`; CI `bench` job saves a
+  baseline and uploads the HTML report.
+- Real-browser benchmark harness (`crates/dom/src/bench_wasm.rs`) using
+  `wasm-bindgen-test` + `performance.now()`; CI `wasm-bench` job runs it in
+  headless Chrome via `wasm-pack test --headless --chrome --release`.
+
+### Changed
+- `docs/src/performance.md` and `docs/src/release-v1.md` document the benchmark
+  harnesses; the real-browser benchmark exit criterion now has a CI-enforced
+  measurement path.
+
 ## [1.0.0-rc.1] - 2026-09-11
 
 Release candidate: the public API is frozen for 1.0.0. The only remaining
