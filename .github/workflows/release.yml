@@ -48,7 +48,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           set -e
-          for crate in core macro dom router ssr testing cli; do
+          for crate in core macro dom router ssr testing cli ui; do
             name=$(grep '^name' "crates/$crate/Cargo.toml" | head -1 | sed 's/.*"\(.*\)"/\1/')
             echo "Publishing $name"
             cargo publish -p "$name" --no-verify
