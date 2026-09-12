@@ -2,7 +2,10 @@ use rustweb_core::{Attr, Cmd, Component, Context, Props, RenderError, VNode};
 use rustweb_dom::{diff, Renderer};
 use rustweb_macro::html;
 use rustweb_router::{GuardResult, LazyRoute, Route, Router};
-use rustweb_ui::{render_button, ButtonProps, ButtonVariant};
+use rustweb_ui::{
+    render_button, render_dialog, render_input, render_tabs, ButtonProps, ButtonVariant,
+    DialogProps, InputProps, TabsProps,
+};
 
 #[derive(Clone, PartialEq, Debug)]
 struct Todo {
@@ -76,6 +79,24 @@ impl Component for App {
                 }
             })
             .collect();
+        let input = render_input(InputProps {
+            id: "new-todo".into(),
+            value: "".into(),
+            placeholder: Some("What needs to be done?".into()),
+            label: Some("New todo".into()),
+            error: None,
+            disabled: false,
+            children: vec![],
+        });
+        let tabs = render_tabs(TabsProps {
+            tabs: vec!["All".into(), "Active".into(), "Done".into()],
+            selected: 0,
+            children: vec![
+                html! { <div>{ rows.clone() }</div> },
+                html! { <div>{ VNode::text("Active filter") }</div> },
+                html! { <div>{ VNode::text("Done filter") }</div> },
+            ],
+        });
         let btn = render_button(ButtonProps {
             label: "Add".into(),
             variant: ButtonVariant::Primary,
@@ -84,11 +105,18 @@ impl Component for App {
             aria_label: None,
             children: vec![],
         });
+        let dialog = render_dialog(DialogProps {
+            open: false,
+            title: "Add todo".into(),
+            children: vec![VNode::text("Dialog content")],
+        });
         Ok(html! {
             <main aria-label="Todo app">
                 <h1>{ "Todos" }</h1>
-                <ul>{ rows }</ul>
+                { input }
+                { tabs }
                 { btn }
+                { dialog }
             </main>
         })
     }

@@ -145,7 +145,7 @@ impl Component for Input {
                     Ok(html! {
                         <div class="rw-field">
                             <label for={p.id.clone()}>{ label.clone() }</label>
-                            <input id={p.id.clone()} value={p.value.clone()} placeholder={ph.clone()} disabled={p.disabled} aria-invalid={true} aria-describedby={error_id.clone()} />
+                            <input id={p.id.clone()} value={p.value.clone()} placeholder={ph.clone()} disabled={p.disabled} aria-invalid={true} aria-describedby={error_id.clone()} aria-label={label.clone()} />
                             <span id={error_id} role="alert">{ p.error.clone().unwrap() }</span>
                         </div>
                     })
@@ -153,7 +153,7 @@ impl Component for Input {
                     Ok(html! {
                         <div class="rw-field">
                             <label for={p.id.clone()}>{ label.clone() }</label>
-                            <input id={p.id.clone()} value={p.value.clone()} disabled={p.disabled} aria-invalid={true} aria-describedby={error_id.clone()} />
+                            <input id={p.id.clone()} value={p.value.clone()} disabled={p.disabled} aria-invalid={true} aria-describedby={error_id.clone()} aria-label={label.clone()} />
                             <span id={error_id} role="alert">{ p.error.clone().unwrap() }</span>
                         </div>
                     })
@@ -162,14 +162,14 @@ impl Component for Input {
                 Ok(html! {
                     <div class="rw-field">
                         <label for={p.id.clone()}>{ label.clone() }</label>
-                        <input id={p.id.clone()} value={p.value.clone()} placeholder={ph.clone()} disabled={p.disabled} />
+                        <input id={p.id.clone()} value={p.value.clone()} placeholder={ph.clone()} disabled={p.disabled} aria-label={label.clone()} />
                     </div>
                 })
             } else {
                 Ok(html! {
                     <div class="rw-field">
                         <label for={p.id.clone()}>{ label.clone() }</label>
-                        <input id={p.id.clone()} value={p.value.clone()} disabled={p.disabled} />
+                        <input id={p.id.clone()} value={p.value.clone()} disabled={p.disabled} aria-label={label.clone()} />
                     </div>
                 })
             }
