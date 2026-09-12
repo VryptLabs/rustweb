@@ -84,7 +84,8 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Run headless browser benchmarks
-        run: wasm-pack test crates/dom --headless --chrome --release
+        run: wasm-pack test --headless --chrome --release
+        working-directory: crates/dom
 
   browser:
     name: browser (${{ matrix.browser }})

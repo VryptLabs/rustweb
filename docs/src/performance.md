@@ -20,5 +20,5 @@
 - **Real-browser benchmarks** — `crates/dom/src/bench_wasm.rs` runs the same
   hot paths compiled to `wasm32` inside headless Chrome via `wasm-bindgen-test`,
   timing them with `performance.now()` and asserting per-op budgets. The
-  `wasm-bench` CI job runs `wasm-pack test crates/dom --headless --chrome --release`.
+  `wasm-bench` CI job runs `wasm-pack test --headless --chrome --release` (run in `crates/dom`).
 
