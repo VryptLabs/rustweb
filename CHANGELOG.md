@@ -6,6 +6,11 @@ All notable changes to `rustweb` are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-12
+
+No crate changes. Fixes `release.yml` publish order to include `rustweb-ui`
+so that `v1.1.0` workflow and future tags publish all 8 crates.
+
 ## [1.1.0] - 2026-09-12
 
 Added UI primitives crate `rustweb-ui` (Button/Input/Dialog/Tabs + Theme) and showcase integration in `todo-app`. No breaking changes.
