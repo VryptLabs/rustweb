@@ -6,6 +6,10 @@ All notable changes to `rustweb` are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-12
+
+Added UI primitives crate `rustweb-ui` (Button/Input/Dialog/Tabs + Theme) and showcase integration in `todo-app`. No breaking changes.
+
 ## [1.0.0] - 2026-09-12
 
 Stable VDOM diff + hydration, router, CLI, testing, and benchmark/a11y

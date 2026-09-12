@@ -528,7 +528,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustweb-cli"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "clap",
  "serde",
@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -547,7 +547,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-dom"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "js-sys",
  "rustweb-core",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-macro"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -570,7 +570,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-router"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustweb-core",
  "serde",
@@ -579,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ssr"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustweb-core",
  "thiserror",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-testing"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustweb-core",
  "rustweb-ssr",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ui"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustweb-core",
  "rustweb-macro",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "todo-app"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "rustweb-core",
  "rustweb-dom",

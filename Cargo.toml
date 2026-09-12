@@ -14,20 +14,20 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/VryptLabs/rustweb"
 rust-version = "1.75"
 
 [workspace.dependencies]
-rustweb-core = { path = "crates/core", version = "1.0.0" }
-rustweb-macro = { path = "crates/macro", version = "1.0.0" }
-rustweb-dom = { path = "crates/dom", version = "1.0.0" }
-rustweb-router = { path = "crates/router", version = "1.0.0" }
-rustweb-ssr = { path = "crates/ssr", version = "1.0.0" }
-rustweb-testing = { path = "crates/testing", version = "1.0.0" }
-rustweb-ui = { path = "crates/ui", version = "1.0.0" }
+rustweb-core = { path = "crates/core", version = "1.1.0" }
+rustweb-macro = { path = "crates/macro", version = "1.1.0" }
+rustweb-dom = { path = "crates/dom", version = "1.1.0" }
+rustweb-router = { path = "crates/router", version = "1.1.0" }
+rustweb-ssr = { path = "crates/ssr", version = "1.1.0" }
+rustweb-testing = { path = "crates/testing", version = "1.1.0" }
+rustweb-ui = { path = "crates/ui", version = "1.1.0" }
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
