@@ -11,3 +11,4 @@ rustweb-ssr = { path = "../../crates/ssr" }
 rustweb-router = { path = "../../crates/router" }
 rustweb-macro = { path = "../../crates/macro" }
 rustweb-testing = { path = "../../crates/testing" }
+rustweb-ui = { path = "../../crates/ui" }

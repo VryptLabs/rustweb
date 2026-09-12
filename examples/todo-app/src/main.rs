@@ -2,6 +2,7 @@ use rustweb_core::{Attr, Cmd, Component, Context, Props, RenderError, VNode};
 use rustweb_dom::{diff, Renderer};
 use rustweb_macro::html;
 use rustweb_router::{GuardResult, LazyRoute, Route, Router};
+use rustweb_ui::{render_button, ButtonProps, ButtonVariant};
 
 #[derive(Clone, PartialEq, Debug)]
 struct Todo {
@@ -75,11 +76,19 @@ impl Component for App {
                 }
             })
             .collect();
+        let btn = render_button(ButtonProps {
+            label: "Add".into(),
+            variant: ButtonVariant::Primary,
+            disabled: false,
+            loading: false,
+            aria_label: None,
+            children: vec![],
+        });
         Ok(html! {
             <main aria-label="Todo app">
                 <h1>{ "Todos" }</h1>
                 <ul>{ rows }</ul>
-                <button aria-pressed="false">{ "Add" }</button>
+                { btn }
             </main>
         })
     }
