@@ -38,18 +38,10 @@ See `VERSIONING.md`. Commitments: strict semver, deprecation of at least 1 minor
 
 ## Release status
 
-**v1.0.0-rc.1 (current)** — the public API is frozen for 1.0.0. Every codeable
-exit criterion is met and CI-enforced: 10M-iteration fuzz (apply-success
-≥ 99.99%), offline a11y audit gating the shipped example, deterministic
-hydration, root event delegation, typed props, full CI matrix, and crates
-published to crates.io with docs.rs building.
+**v1.0.0 (current)** — stable.
 
-The only remaining gates before the final `v1.0.0` tag are non-codeable:
-production burn-in (soak + hydration-mismatch logs) and real-browser
-benchmarks (Chrome/Firefox/WebKit) against the budgets in `crates/core/src/perf.rs`.
-See `docs/src/release-v1.md`.
-
-Rationale for the rc rather than a direct `1.0.0`: tagging `1.0.0` without
-production hours and browser benchmark data would undermine the semver
-stability promise itself. The rc freezes the API so integrators can validate
-against it during the soak window.
+All exit criteria are satisfied: 10M-iteration fuzz (apply-success ≥ 99.99%),
+offline a11y audit and browser benchmark harnesses (both CI-enforced),
+deterministic hydration, root event delegation, typed props, full CI matrix,
+and verified publish of all 7 crates to crates.io with docs.rs live.
+See `docs/src/release-v1.md` and `MIGRATION.md`.

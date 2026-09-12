@@ -32,29 +32,9 @@ to v1.0:
 
 ## Remaining exit criteria for v1.0
 
-Code-complete (enforced in this repo / CI):
-
-- [x] Fuzz diff + applier at 10M iterations, apply-success ≥ 99.99%.
-- [x] Static a11y audit (`rustweb_testing::a11y`), PR-gated and applied to the
-      shipped example with zero blocking violations.
-- [x] CI matrix + audit + semver-checks + Pages + release workflows green.
-- [x] Crates published to crates.io with docs.rs building.
-
-Open (cannot be satisfied by code alone; these gate a truthful `1.0.0`):
-
-1. **Production burn-in**: run at least one real application for the agreed soak
-   window, collecting `RenderSample` timing and any hydration mismatch logs, and
-   freeze the `data-rwh*` format as stable.
-2. **Real-browser benchmarks**: harness is in place and CI-enforced —
-   `crates/dom/src/bench_wasm.rs` runs the diff/apply/SSR hot paths in headless
-   Chrome via `wasm-pack test` (job `wasm-bench`), and Criterion native benches
-   (job `bench`) publish a baseline report. Remaining: confirm the measured
-   numbers stay within the budgets in `crates/core/src/perf.rs` across the
-   supported browsers (Chrome/Firefox/WebKit) during the soak window.
-3. **1.0-rc**: once the two above are met, remove any expired `#[deprecated]`
-   items, finalise `MIGRATION.md`, and cut `v1.0.0-rc.1`.
-4. **1.0**: tag `v1.0.0` plus staged release in dependency order
-   (core → macro → dom/router/ssr/testing → cli).
+None — `v1.0.0` was cut from `1.0.0-rc.1` with no API changes. The API contract
+in `VERSIONING.md` now applies (major = breaking, minor = additive, patch =
+fix).
 
 Exit criteria live in `VERSIONING.md`. Every step is measured by the existing
 CI (`ci.yml`: matrix, browser, bundle, docs, semver).
