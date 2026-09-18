@@ -141,9 +141,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.6.6"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "473c7e07f409a8d772161724aa8db6a765a2532a70f9667eeb7b49d3d02fbdca"
+checksum = "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -151,9 +151,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.6.6"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b48fea5a88e9ae728a2dcbedbfc0e730f7d60da42e1cb049a83c9fb8b789889"
+checksum = "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d"
 dependencies = [
  "anstream",
  "anstyle",
@@ -163,9 +163,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.6.4"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d012d2b9d65aca7f18f4d9878a045bc17899bba951561ba5ec3c2ba1eed9a061"
+checksum = "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -528,7 +528,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustweb-cli"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "clap",
  "serde",
@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-core"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -547,7 +547,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-dom"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "js-sys",
  "rustweb-core",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-macro"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -570,7 +570,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-router"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "serde",
@@ -579,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ssr"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "thiserror",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-testing"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-ssr",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ui"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-macro",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "todo-app"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-dom",
