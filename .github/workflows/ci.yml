@@ -67,7 +67,7 @@ jobs:
       - name: Run criterion
         run: cargo bench -p rustweb-tests --bench render -- --save-baseline ci --measurement-time 3 --sample-size 20
       - name: Upload criterion report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: criterion-report
           path: target/criterion
