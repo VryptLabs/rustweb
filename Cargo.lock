@@ -528,7 +528,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustweb-cli"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "clap",
  "serde",
@@ -538,7 +538,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-core"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -547,7 +547,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-dom"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "js-sys",
  "rustweb-core",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-macro"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -570,7 +570,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-router"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "serde",
@@ -579,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ssr"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "thiserror",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-testing"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-ssr",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "rustweb-ui"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-macro",
@@ -660,9 +660,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.151"
+version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
+checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
  "itoa",
  "memchr",
@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "todo-app"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "rustweb-core",
  "rustweb-dom",
